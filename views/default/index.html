@@ -1,0 +1,2718 @@
+{{extend 'layout_bootstrap3.html'}}
+
+<link rel="stylesheet" type="text/css" href="{{=URL('static', 'css/slidemenu-component.css')}}" />
+<link rel="stylesheet" type="text/css" href="{{=URL('static', 'DataTables-1.10.7/media/css/dataTables.bootstrap.css')}}"/>
+<link rel="stylesheet" type="text/css" href="{{=URL('static', 'DataTables-1.10.7/media/css/responsive.bootstrap.min.css')}}"/>
+<link rel="stylesheet" type="text/css" href="{{=URL('static', 'css/bootstrap-datepicker3.min.css')}}" />
+<link rel="stylesheet" type="text/css" href="{{=URL('static', 'bootstrap-daterangepicker/daterangepicker-bs3.css')}}" />
+<link rel="stylesheet" type="text/css" href="{{=URL('static', 'css/ticker_blue.css')}}" />
+<link rel="stylesheet" type="text/css" href="{{=URL('static', 'css/select2.min.css')}}" />
+<link rel="stylesheet" type="text/css" href="{{=URL('static', 'css/select2-bootstrap.css')}}" />
+<link rel="stylesheet" type="text/css" href="{{=URL('static', 'css/multiple-select.css')}}" />
+<link rel="stylesheet" type="text/css" href="{{=URL('static', 'css/bootstrap-tagsinput.css')}}" />
+
+{{
+import os
+xrecruit_css = '%sstatic/%s' % (request.folder, 'css/xrecruit.css')
+xrecruit_mtime = str(int(os.path.getmtime(xrecruit_css)))
+}}
+<link rel="stylesheet" type="text/css" href="{{=URL('static', 'css/xrecruit.css')}}?{{=xrecruit_mtime}}" />
+
+<div class="row-fluid">
+    
+    <!-- <button id="test" class="btn btn-warning">TEST</button> -->
+    
+    <nav class="cbp-spmenu cbp-spmenu-vertical cbp-spmenu-right" id="filter-panel">
+      <h3>Filter Panel</h3>
+      <div class="form-group">
+        <div style="padding:5px 10px;">
+          <div class="btn-group btn-group-justified">
+            <label id="filter-go" class="btn btn-primary">Filter</label>
+            <label id="filter-reset" class="btn btn-default">Clear</label>
+          </div>
+        </div>
+      </div>
+      {{=filter_form}}
+    </nav>
+    
+    <nav class="cbp-spmenu cbp-spmenu-vertical cbp-spmenu-left" id="bookmark-panel">
+      <h3>Bookmarks</h3>
+      {{=bookmarks}}
+    </nav>
+    
+    <div id="ticker-container">
+      <ul id="ticker" class="newsticker">
+      {{for t in ticker:}}
+        {{=t}}
+      {{pass}}
+      </ul>
+    </div>
+    
+    <br>
+    
+    <div id="table-div" class="row-fluid">
+        <div id="result-pane" class="">
+            <div class="pager">
+              <div id="tab-id-box" class="form-group">
+                <div class="input-group">
+                  <input id="gettab-id" class="form-control" placeholder="app id">
+                  <span class="input-group-btn">
+                    <button id="gettab" class="btn btn-inverse" type="button">Show</button>
+                  </span>
+                </div>
+              </div>
+              
+              {{if auth.has_membership("admin") or auth.has_membership("hr"):}}
+              <div class="form-inline pull-right">
+                <div class="checkbox" style="margin-right:10px;">
+                  <label title="include Interview data in export"><input id="interview-include" type="checkbox"> Interview data</label>
+                </div>
+                <div class="btn-group">
+                  <button id="export-btn" class="btn btn-primary">Export</button>
+                  <a class="btn btn-default" href="#"><i id="export-link" class="fa fa-ban"></i></a>
+                </div>
+              </div>
+              {{pass}}
+              
+            </div>
+            
+            <!-- Database query form -->
+            <div class="col-sm-12">
+                <div class="panel-group" style="margin-bottom:0;">
+                  <div class="panel panel-default" style="border:none;">
+                    <div id="filterdiv" class="panel-collapse collapse" role="tabpanel">
+                      <div class="panel-heading">
+                        <h5 class="text-muted" style="margin:0;"><strong>Database Query Form</strong> <small>for spreadsheet export</small></h5>
+                      </div>
+                      <div class="panel-body">
+                        {{=filter_form}}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+            </div>
+            
+            {{=table}}
+            
+        </div>
+    </div>
+    
+</div>
+
+<!-- Detail panel -->
+<div class="row-fluid">
+    <div id="detail-panel" class="span10">
+        <div class="">
+            <a href="#" id="clear-tabs" class="click-btn" title="Clear tabs" style="color:#555;"><i class="fa fa-times-circle fa-lg"></i></a>
+        </div>
+        <div id="detail-tabs">
+            <ul></ul>
+        </div>
+    </div>
+</div>
+
+<!-- subscription - watchlist panel -->
+<div id="watchlist" class="modal fade bs-example-modal-lg" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header"><h4>Watch List <small>subscribe to be notified on application submits</small></h4></div>
+      <div class="modal-body">
+        <form id="watchlist-form">
+        {{=watchlist_grid}}
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" id="subscribe-all">Toggle Subscribe All</button>
+        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" id="watchlist-submit">Save changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="error-dlg" class="modal fade bs-example-modal-sm" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div id="error-dlg-body" class="modal-body"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="loading-dlg" class="modal fade" role="dialog" style="width: 300px;">
+  <div class="progress progress-striped active" style="position:relative;">
+    <div class="progress-bar loading-bar" style="width:100%;"></div>
+  </div>
+</div>
+
+<div id="status-selector" class="hidden">
+<div class="btn-group">
+  <a class="btn btn-primary" href="#"><i id="top-label" class="fa fa-user fa-fw"></i> User</a>
+  <a class="btn btn-primary dropdown-toggle" data-toggle="dropdown" href="#">
+    <span class="fa fa-caret-down"></span></a>
+  <ul class="dropdown-menu">
+    <li><a class="item" href="#"><i class="fa fa-pencil fa-fw"></i> Edit</a></li>
+    <li><a class="item" href="#"><i class="fa fa-trash-o fa-fw"></i> Delete</a></li>
+    <li><a class="item" href="#"><i class="fa fa-ban fa-fw"></i> Ban</a></li>
+    <li class="divider"></li>
+    <li><a href="#"><i class="i"></i> Make admin</a></li>
+  </ul>
+</div>
+</div>
+
+<div class="scroll-top-wrapper">
+  <span class="scroll-top-inner">
+    <i class="fa fa-3x fa-arrow-circle-up"></i>
+  </span>
+</div>
+
+<div id="share-dlg" class="modal fade bs-modal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <i class="fa fa-share-alt"></i><strong> SHARE BOOKMARKS</strong>
+      </div>
+      <div id="share-dlg-body" class="modal-body">
+        <div id="share-url" class="modal-padleft"></div>
+        <br>
+        <div class="col-lg12">
+          <input id="username-autocomplete" class="form-control" placeholder="user names">
+        </div>
+        <br>
+        <p>
+        <span id="hint"></span>
+        </p>
+        <div class="col-lg12">
+          <textarea id="share-msg" class="form-control" placeholder="message" rows=3></textarea>
+        </div>
+        <br>
+        <h4 id="share-name" class="modal-padleft"></h4>
+        <ul id="share-content"></ul>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-default closebtn" data-dismiss="modal">Close</button>
+        <button id="share" class="btn btn-primary">Share</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="{{=URL('static','js/ui.dropdowntricblist.js')}}" type="text/javascript"></script>
+
+
+<script type="text/javascript">
+    
+    var loading_overlay = '<div id="ov" class="ov"><div class="loader">Loading...</div></div>';
+    
+    String.prototype.format = function() {
+        var formatted = this;
+        for (var i = 0; i < arguments.length; i++) {
+            var regexp = new RegExp('\\{'+i+'\\}', 'gi');
+            formatted = formatted.replace(regexp, arguments[i]);
+        }
+        return formatted;
+    };
+    
+    function panelResize() {
+        var bodyheight = $(window).height();
+        $('#bookmark-tab-div').height(bodyheight-170);
+    }
+    window.onresize = function() {
+        panelResize();
+    };
+    
+    $.fn.serializeObject = function() {
+        var o = {};
+        var a = this.serializeArray();
+        $.each(a, function() {
+            if (o[this.name] !== undefined) {
+                if (!o[this.name].push) {
+                    o[this.name] = [o[this.name]];
+                }
+                o[this.name].push(this.value || '');
+            } else {
+                o[this.name] = this.value || '';
+            }
+        });
+        return o;
+    };
+    
+    var menuRight = document.getElementById( 'filter-panel' ),
+    showRight = document.getElementById( 'filter-toggle' ),
+    menuLeft = document.getElementById( 'bookmark-panel' ),
+    showLeft = document.getElementById( 'bookmark-toggle' ),
+    body = document.body;
+    
+    body.className += ' cbp-spmenu-push';
+    
+    showRight.onclick = function() {
+        classie.toggle(this, 'active');
+        classie.toggle(menuRight, 'cbp-spmenu-open');
+        disableOther('showRight');
+    };
+    showLeft.onclick = function() {
+        
+        panelResize();
+        
+        classie.toggle(this, 'active');
+        classie.toggle(body, 'cbp-spmenu-push-toright');
+        classie.toggle(menuLeft, 'cbp-spmenu-open');
+        disableOther('showLeft');
+    };
+    
+    function disableOther(button) {
+        if (button !== 'showRight') {
+            classie.toggle(showRight, 'disabled');
+        }
+        if (button !== 'showLeft') {
+            classie.toggle(showLeft, 'disabled');
+        }
+    }
+    
+    $(document).on('click', 'html', function(e) {
+        var tag = e.target.tagName;
+        // close filter panel when clicking on page
+        var x = $(e.target).closest('#filter-panel').length;
+        var y = $(e.target).closest('.daterangepicker').length;
+        if (x+y === 0 && tag !== 'LABEL' && tag !== 'INPUT') {
+            $('.multi-select').each(function() {
+                $(this).select2('close');
+            });
+            showRight.checked = false;
+            classie.remove(showRight, 'active');
+            classie.remove(menuRight, 'cbp-spmenu-open');
+        }
+        // close bookmark panel
+        var z = $(e.target).closest('#bookmark-panel').length;
+        var w = $(e.target).closest('#share-dlg').length;
+        if (z+w === 0 && tag !== 'TD' && tag !== 'LABEL' && tag !== 'INPUT' && tag !== 'I' && tag !== 'BUTTON') {
+            showLeft.checked = false;
+            classie.remove(showLeft, 'active');
+            classie.remove(menuLeft, 'cbp-spmenu-open');
+            classie.remove(body, 'cbp-spmenu-push-toright');
+        }
+    });
+    
+    // TRI-STATE dropdown
+    $('.tristate-dropdown').dropdowntricblist({
+        width: 280,
+        maxDropHeight: 600,
+        onItemClick: function(checkbox, selector) {
+            //
+        }
+    });
+    
+    
+    
+    /*
+    python /opt/web2py/gluon/contrib/websocket_messaging2.py -k web2py4me -p 8080 -l 192.168.200.204
+    */
+    function browserDetect() {
+        var ua= navigator.userAgent, tem,
+        M= ua.match(/(opera|chrome|safari|firefox|msie|trident(?=\/))\/?\s*(\d+)/i) || [];
+        if(/trident/i.test(M[1])){
+            tem=  /\brv[ :]+(\d+)/g.exec(ua) || [];
+            return 'IE '+(tem[1] || '');
+        }
+        if(M[1]=== 'Chrome'){
+            tem= ua.match(/\b(OPR|Edge)\/(\d+)/);
+            if(tem!= null) return tem.slice(1).join(' ').replace('OPR', 'Opera');
+        }
+        M= M[2]? [M[1], M[2]]: [navigator.appName, navigator.appVersion, '-?'];
+        if((tem= ua.match(/version\/(\d+)/i))!= null) M.splice(1, 1, tem[1]);
+        return M.join(' ');
+    }
+    
+    function getCookie() {
+        var name = 'xrecruit_filter=';
+        var ca = document.cookie.split(';');
+        for (var i=0; i<ca.length; i++) {
+            var c = ca[i];
+            while (c.charAt(0) === ' ') {
+                c = c.substring(1);
+            }
+            if (c.indexOf(name) === 0) {
+                return c.substring(name.length, c.length);
+            }
+        }
+        return '';
+    }
+    
+    function createArray(len, itm) {
+        var arr1 = [itm],
+            arr2 = [];
+        while (len > 0) {
+            if (len & 1) arr2 = arr2.concat(arr1);
+            arr1 = arr1.concat(arr1);
+            len >>>= 1;
+        }
+        return arr2;
+    }
+    
+    /* Date function */
+    function getMonthName(m) {
+        var monthNames = ["January", "February", "March", "April", "May", "June",
+                       "July", "August", "September", "October", "November", "December"];
+        return monthNames[m];
+    }
+    function getShortMonthName(m) {
+        var monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                          "Jul", "Aug", "Sept", "Oct", "Nov", "Dec"];
+        return monthNames[m];
+    }
+    function getMonthDigit(m) {
+        var months = ['','jan','feb','mar','apr','may','jun','jul','aug','sept','oct','nov','dec'];
+        return ('00' + months.indexOf(m.toLowerCase()).toString()).slice(-2);
+    }
+    
+    function getDateObj(datestr) {
+        if (datestr === '') return '';
+        var tmp = datestr.split(/\D/);
+        return new Date(tmp[0], --tmp[1], tmp[2]);
+    }
+    function getDateStr(date, delim) {
+        if (typeof delim === 'undefined') {
+            delim = '/';
+        }
+        var pad = '00';
+        var y = date.getFullYear();
+        var m = (pad+(date.getMonth()+1)).slice(-pad.length);
+        var d = (pad+date.getDate()).slice(-pad.length);
+        return m + delim + d + delim + y;
+    }
+    function dateparser(d) {
+        return getMonthName(d.getMonth()) + ' ' + d.getDate() + ', ' + d.getFullYear();
+    }
+    function dateToEpoch(d) {
+        // 1 = month, 2=date, 3=year, 4=hour, 5=minute 6=ampm
+        var mat = /(\w{3,4})\s(\d{2})\s(\d{4})\s(\d{2}):(\d{2})\s([AP]M)/.exec(d);
+        if (mat) {
+            var h = +mat[4];
+            if (mat[6] === 'AM' && h === 12) {
+                h = 0;
+            } else if (mat[6] === 'PM' && h !== 12) {
+                h += 12;
+            }
+            var z = new Date(getMonthDigit(mat[1])+'/'+mat[2]+'/'+mat[3]+' '+h+':'+mat[5]+':00');
+            return z.getTime();
+        } else {
+            return d;
+        }
+    }
+    
+    
+    var delay = (function() {
+        var timer = 0;
+        return function(callback, ms) {
+            clearTimeout(timer);
+            timer = setTimeout(callback, ms);
+        };
+    })();
+    
+    function emailLink(email) {
+        return '<a href="mailto:' + email + '">' + email + '</a>';
+    }
+    function anchorize(url) {
+        var a = '';
+        if (url !== '') {
+            var name = url;
+            if (url.length > 28) {
+                name = url.substring(0, 25) + '...';
+            }
+            a = '<a href="http://' + url + '" target="_blank">' + name + '</a>';
+        }
+        return a
+    }
+    function fileLink(fp) {
+        if (fp === '') {
+            fp = '<i class="icon-ban-circle" style="opacity:0.5;" title="no file"></i>';
+        }
+        return fp;
+    }
+    
+    var reload_interval_sec = 59;
+    var loading_icon = '<span class="fa fa-spin fa-refresh"></span>';
+    
+    var tmpt = new Date();
+    var today = new Date(tmpt.getFullYear(), tmpt.getMonth(), tmpt.getDate());
+    var yearstart = new Date(today.getFullYear()+'/01/01');
+    
+    
+    /*
+    *
+    *DOCUMENT READY
+    *
+    */
+    $(document).ready(function() {
+        var socketid = '';
+        
+        /* Newsticker */
+        $('#ticker').newsticker({
+            style: 'fade',
+            tickerTitle: 'Recent Updates',
+        });
+        $(document).on('click', '#ticker-fix', function() {
+            $('#ticker').empty().html('{{="".join([t.xml() for t in ticker])}}');
+        });
+        
+        function update_ticker() {
+            $.ajax({
+                url: '{{=URL("update_ticker")}}',
+                dataType: 'html',
+            })
+            .done(function(data) {
+                $('#ticker').remove();
+                $('#ticker-container').html(data);
+                $('#ticker').newsticker({
+                    style: 'fade',
+                    tickerTitle: 'Recent Updates',
+                });
+            })
+            .fail(function() {
+                alert('Failed to update ticker.');
+            });
+        }
+        
+        $('#daterange-label').html(dateparser(yearstart) + ' - ' + dateparser(today));
+        
+        /* Notice dismisser */
+        $(document).on('click', '.dismiss', function(e) {
+            e.preventDefault();
+            $(this).closest('.message').fadeTo('slow', 0, function() {
+                $(this).slideUp('slow', function() {
+                    $(this).remove();
+                });
+            });
+        });
+        $(document).on('click', '.dismiss-all', function(e) {
+            e.preventDefault();
+            $('.message').fadeTo('slow', 0, function() {
+                $(this).slideUp('slow', function() {
+                    $(this).remove();
+                });
+            });
+        });
+        
+        $(document).on('click', '.sb-icon-cc', function(e) {
+            var $this = $(this);
+            var $parent = $this.parent();
+            if ($parent.hasClass('sb-cc-closed')) {
+                // opening
+                $parent.removeClass('sb-cc-closed');
+                $this.removeClass('fa-envelope-o').addClass('fa-envelope text-primary');
+            } else {
+                // closing
+                $parent.addClass('sb-cc-closed');
+                $this.removeClass('fa-envelope text-primary').addClass('fa-envelope-o');
+            }
+        });
+        
+        
+        function setCookie(cvalue) {
+            var data = {};
+            $('#filter-form :input').each(function() {
+                if (this.name === '' || this.type === 'hidden') {
+                    return true;
+                }
+                var val = '';
+                if (this.type === 'select-multiple') {
+                    // have to check each option's data tristate
+                    $('option:selected', this).each(function() {
+                        var v = $(this).val();
+                        if ($(this).data('tristate') === 'tri-mix') {
+                            v = '-' + v;
+                        }
+                        if (val !== '') {
+                            val += ',';
+                        }
+                        val += v;
+                    });
+                } else {
+                    val = this.value;
+                }
+                if (val !== null && val !== '') {
+                    data[this.name] = val;
+                }
+            });
+            data = JSON.stringify(data);
+            var d = new Date();
+            var expires = new Date(d.getTime() + (365*24*60*60*1000));
+            document.cookie = 'xrecruit_filter=' + data + '; expires=' + expires.toGMTString() + '; path=/';
+        }
+        
+        /* columns
+         0 first_name
+         1 status_name
+         2 posting_title
+         3 location_name
+         4 cover_letter
+         5 cv_file
+         6 reel
+         7 date_applied
+         8 visa_id
+         9 country
+        10 hearsay_name
+        11 reel_detail
+        12 hearsay_detail
+        13 imdb
+        14 linkedin
+        15 email
+        16 phone
+        17 visa_status
+        18 status_id
+        19 posting_visible
+        */
+        
+        var COLUMNS = {
+            status: 1,
+            position: 2,
+            location: 3,
+            dateapplied: 7,
+            visa: 8,
+            country: 9,
+            how: 10,
+            future: 19,
+        };
+        
+        /*
+        Load cookie values for table filters
+        */
+        function checkCookie() {
+            var filters = createArray(18, null);
+            var cookie = getCookie();
+            if (cookie !== '' && cookie !== '{}') {
+                /* legacy check */
+                if (cookie.indexOf('ts-')>0) {
+                    // wipe cookie
+                    alert('Filter settings updated. Please update your filter values.');
+                    var d = new Date();
+                    var expires = new Date(d.getTime() + (365*24*60*60*1000));
+                    document.cookie = 'xrecruit_filter=""; expires=' + expires.toGMTString() + '; path=/';
+                    return;
+                }
+                
+                var datestart, dateend = '';
+                var data = JSON.parse(cookie);
+                $.each(data, function(key, value) {
+                    if (value == '') {
+                        return true;
+                    }
+                    if (key === 'future' || key === 'country' || key === 'datestart' || key === 'dateend') {
+                        $('#filter-'+key).val(value);
+                        if (key === 'datestart') {
+                            datestart = getDateObj(value);
+                        } else if (key === 'dateend') {
+                            dateend = getDateObj(value);
+                        } else if (key === 'country') {
+                            filters[COLUMNS['country']] = {'search':value};
+                        }
+                    } else {
+                        // multi-select
+                        var fid = '#filter-'+key;
+                        values = value.split(',');
+                        $.each(values, function(idx, v) {
+                            var state = 'tri-on';
+                            if (v.lastIndexOf('-',0) === 0) {
+                                state = 'tri-mix';
+                                v = v.slice(1);
+                            }
+                            var $opt = $(fid+' option[value="'+v+'"]');
+                            if ($opt.length) {
+                                $opt.attr('selected', true).data('tristate', state);
+                                var idx = $opt[0].index;
+                                var anchorid = '#ddcl-filter-'+key+'-i'+idx;
+                                $(anchorid).removeClass(function(i, css) {
+                                    return (css.match(/(^|\s)tri-\S+/g) || []).join(' ');
+                                }).addClass(state);
+                            }
+                        });
+                        $(fid).dropdowntricblist('refresh');
+                        filters[COLUMNS[key]] = {'search':value};
+                    }
+                    if (datestart !== '' && dateend !== '') {
+                        updateDaterangeLabel('filter', datestart, dateend);
+                        filters[COLUMNS['dateapplied']] = {'search':getDateStr(datestart)+'|'+getDateStr(dateend)};
+                    }
+                });
+                $('#filter-label').addClass('filtered');
+            } else {
+                $('#filter-label').removeClass('filtered');
+            }
+            return filters;
+        }
+        
+        var searchcols = checkCookie();
+        
+        var $table = $('#application-table').DataTable({
+            'responsive': {
+                details: false,
+            },
+            'searchDelay': 300,
+            'order': [[7,'desc']],
+            'searchCols': searchcols,
+            'columns': [
+                {'data':'applicant_first_name'},
+                {'data':'status_name'},
+                {'data':'posting_title'},
+                {'data':'location_name'},
+                {'data':'applicant_cover_letter'},
+                {'data':'applicant_cv_file'},
+                {'data':'applicant_reel'},
+                {'data':'application_date_applied'},
+                {'data':'visa_id'},
+                {'data':'applicant_country'},
+                {'data':'hearsay_name'},
+                {'data':'applicant_reel_detail'},
+                {'data':'applicant_hearsay_detail'},
+                {'data':'applicant_imdb'},
+                {'data':'applicant_linkedin'},
+                {'data':'applicant_email'},
+                {'data':'applicant_phone'},
+                {'data':'visa_status'},
+                {'data':'status_id'},
+                {'data':'applicant_id'},
+                {'data':'posting_visible'},
+                {'data':'interview_id'},
+                {'data':'interview_date'},
+                {'data':'interview_interviewer'},
+                {'data':'interview_done'},
+                {'data':'interview_xuser_id'},
+                {'data':'count'},
+            ],
+            'columnDefs': [
+                {
+                    'targets': 0,
+                    'name': 'jobop_applicant.first_name',
+                    'orderable': true,
+                    'searchable': true,
+                    'render': function(data, type, row) {
+                        //console.log(row);
+                        var num_comments = row['count'];
+                        if (num_comments > 0) {
+                            var comments_count = data + ' <span class="label label-counter label-primary pull-right">' + num_comments + '</span>';
+                            return comments_count;
+                        }
+                        return data;
+                    }
+                 }, // name
+                {'targets': 1, 'name': 'jobop_status.name', 'orderable': true, 'searchable': true}, // status
+                {'targets': 2, 'name': 'jobop_posting.title', 'orderable': true, 'searchable': true}, // position
+                {'targets': 3, 'name': 'jobop_location.name', 'orderable': true, 'searchable': true}, // studio
+                {
+                    'targets': 4,
+                    'name': 'jobop_applicant.cover_letter',
+                    'orderable': false,
+                    'searchable': false,
+                    'className': 'centered'
+                }, // cover letter
+                {
+                    'targets': 5,
+                    'name': 'jobop_applicant.cv_file',
+                    'orderable': false,
+                    'searchable': false,
+                    'className': 'centered'
+                }, // cv
+                {
+                    'targets': 6,
+                    'name': 'jobop_applicant.reel',
+                    'orderable': false,
+                    'searchable': false,
+                    'className': 'centered',
+                    'render': function(data, type, row) {
+                        if (data === '') {
+                            return '<i class="fa fa-ellipsis-h text-muted"></i>';
+                        } else {
+                            return data;
+                        }
+                    }
+                 }, // link
+                {'targets': 7, 'name': 'jobop_application.date_applied', 'orderable': true, 'searchable': true}, // applied date
+                {'targets': 8, 'name': 'jobop_visa.id', 'orderable': true, 'searchable': true, 'visible': true}, // visa id
+                {'targets': 9, 'name': 'jobop_applicant.country', 'orderable': true, 'searchable': true, 'visible': true}, // country
+                {'targets': 10, 'name': 'jobop_hearsay.name', 'orderable': true, 'searchable': true, 'visible': true}, // how type
+                {'targets': 11, 'name': 'jobop_applicant.reel_detail', 'orderable': false, 'searchable': false, 'visible': false, 'className':'none'}, // reel detail
+                {'targets': 12, 'name': 'jobop_applicant.hearsay_detail', 'orderable': false, 'searchable': false, 'visible': false, 'className':'none'}, // how detail
+                {'targets': 13, 'name': 'jobop_applicant.imdb', 'orderable': false, 'searchable': false, 'visible': false, 'className':'none'}, // imdb link
+                {'targets': 14, 'name': 'jobop_applicant.linkedin', 'orderable': false, 'searchable': false, 'visible': false, 'className':'none'}, // linkedin link
+                {'targets': 15, 'name': 'jobop_applicant.email', 'orderable': false, 'searchable': false, 'visible': false, 'className':'none'}, // email
+                {'targets': 16, 'name': 'jobop_applicant.phone', 'orderable': false, 'searchable': false, 'visible': false, 'className':'none'}, // phone
+                {'targets': 17, 'name': 'jobop_visa.status', 'orderable': false, 'searchable': false, 'visible': false, 'className':'none'}, // visa status
+                {'targets': 18, 'name': 'jobop_status.id', 'orderable': false, 'searchable': false, 'visible': false, 'className':'none'}, // status id
+                {'targets': 19, 'name': 'jobop_applicant.id', 'orderable': false, 'searchable': false, 'visible': false, 'className':'none'}, // applicant id
+                {'targets': 20, 'name': 'jobop_posting.visible', 'orderable': false, 'searchable': false, 'visible': false, 'className':'none'}, // posting visible
+                {'targets': 21, 'name': 'jobop_interview.id', 'orderable': false, 'searchable': false, 'visible': false, 'className':'none'}, // interivew id
+                {'targets': 22, 'name': 'jobop_interview.date', 'orderable': false, 'searchable': false, 'visible': false, 'className':'none'}, // interview date
+                {'targets': 23, 'name': 'jobop_interview.interviewer', 'orderable': false, 'searchable': false, 'visible': false, 'className':'none'}, // interviewer
+                {'targets': 24, 'name': 'jobop_interview.done', 'orderable': false, 'searchable': false, 'visible': false, 'className':'none'}, // interview done
+                {'targets': 25, 'name': 'jobop_interview.xuser_id', 'orderable': false, 'searchable': false, 'visible': false, 'className':'none'}, // interview creator
+                {'targets': 26, 'name': 'COUNT(jobop_comment.id)', 'orderable': false, 'searchable': false, 'visible': false, 'className':'none'}, // number of comments
+            ],
+            'rowCallback': function(row, data, index) {
+                $(row).attr('data-applicantid', data['applicant_id']);
+                if (data['status_id'] === 10) {
+                    $(row).addClass('offer');
+                } else if (data['posting_visible'] === 0) {
+                    $(row).addClass('future').attr('title', 'Future Consideration');
+                }
+            },
+            'pagingType': 'simple_numbers',
+            'processing': true,
+            'serverSide': true,
+            'ajax': '{{=URL("applicationTable")}}',
+            'drawCallback': function(settings) {
+                $('*[title]').tooltip();
+            },
+        });
+        
+        function getAllApplications(applicant_id, application_id) {
+            // get this applicant's other applications
+            $.ajax({
+                url: '{{=URL("applicantApps")}}',
+                data: {
+                    applicantid: applicant_id,
+                    applicationid: application_id
+                },
+                dataType: 'JSON',
+            })
+            .done(function(data) {
+                if (data) {
+                    var application_links = data['links'];
+                    $('#app-list-'+application_id).empty().append(application_links);
+                    
+                    if (data.interviews) {
+                        $('#interview-cell-'+application_id).empty().append(data.interviews);
+                        // init datepickers
+                        $('#interview-cell-'+application_id+' .date-edit').each(function() {
+                            var $this = $(this);
+                            var $dp = $this.datepicker({
+                                format: 'M dd yyyy',
+                                daysOfWeekDisabled: '0,6',
+                                todayBtn: 'linked',
+                                autoclose: true,
+                                todayHighlight: true,
+                            });
+                            
+                            var dobj = new Date($this.val());
+                            var d = getShortMonthName(dobj.getMonth())+' '+dobj.getDate()+' '+dobj.getFullYear();
+                            $this.datepicker('setDate', d);
+                            $this.datepicker('update');
+                            $this.hide();
+                            
+                            $dp.on('hide', function(e) {
+                                $this.hide();
+                                $this.prev().show();
+                            });
+                            $dp.on('changeDate', function(e) {
+                                $.ajax({
+                                    url: '{{=URL("interviewUpdate")}}',
+                                    dataType: 'json',
+                                    data: {
+                                        application_id: application_id,
+                                        interview_id: $this.data('interviewid'),
+                                        date: e.date.getFullYear()+'-'+(e.date.getMonth()+1)+'-'+e.date.getDate(),
+                                        updater: socketid,
+                                        }
+                                })
+                                .done(function(data) {
+                                    var d = getShortMonthName(e.date.getMonth())+' '+e.date.getDate()+' '+e.date.getFullYear();
+                                    $this.prev().text(d);
+                                })
+                                .fail(function(e) {
+                                    alert('Faile to update interview');
+                                });
+                            });
+                        });
+                        // if interview pending, delete interview reuqest status option
+                        {{if not hr_permission:}}
+                        //if ($('#interview-cell-'+application_id+' > .interview-'+application_id).length > 0) {
+                        if ($('#interview-cell-'+application_id+' > .interview-'+application_id + '.pending').length > 0) {
+                            $('#status-' + application_id).find('option[value="2"]').remove();
+                            console.log('delete');
+                        }
+                        {{pass}}
+                    } else {
+                        //'None Scheduled'
+                    }
+                }
+            })
+            .fail(function(e) {
+                console.log('error retrieving application links, interview data');
+            });
+        }
+        
+        function updateDaterangeLabel(id, start, end) {
+            if (typeof start === 'undefined') {
+                labelval = ' Pick a Date Range';
+                startval = '';
+                endval = '';
+            } else if (typeof start.getMonth === 'function') { // Date object
+                startval = getDateStr(start, '-');
+                endval = getDateStr(end, '-');
+                if (startval === endval) {
+                    labelval = dateparser(start);
+                } else {
+                    labelval = dateparser(start) + ' - ' + dateparser(end);
+                }
+            } else {
+                startval = start.format('YYYY-MM-DD');
+                endval = end.format('YYYY-MM-DD');
+                if (start.format('YYYY-MM-DD') === end.format('YYYY-MM-DD')) {
+                    labelval = start.format('MMMM D, YYYY');
+                } else {
+                    labelval = start.format('MMMM D, YYYY') + ' - ' + end.format('MMMM D, YYYY');
+                }
+            }
+            
+            switch (id) {
+                case 'daterange':
+                    var label = '#daterange-label';
+                    var start = '#date-filter-start';
+                    var end = '#date-filter-end';
+                    break;
+                case 'filter':
+                    var label = '#filter-daterange-label';
+                    var start = '#filter-datestart';
+                    var end = '#filter-dateend';
+                    break;
+                case 'ts':
+                    var label = '#ts-daterange-label';
+                    var start = '#ts-datestart';
+                    var end = '#ts-dateend';
+                    break;
+            }
+            $(label).html(labelval);
+            $(start).val(startval);
+            $(end).val(endval);
+        }
+        
+        
+        function filterHandle() {
+            var position_opts = '';
+            var status_opts = '';
+            var location_opts = '';
+            var visa_opts = '';
+            var how_opts = '';
+            
+            $('#filter-position option:selected').each(function() {
+                var v = $(this).val();
+                if ($(this).data('tristate') === 'tri-mix') {
+                    v = '-' + v;
+                }
+                if (position_opts !== '') {
+                    position_opts += ',';
+                }
+                position_opts += v;
+            });
+            
+            $('#filter-status option:selected').each(function() {
+                var v = $(this).val();
+                if ($(this).data('tristate') === 'tri-mix') {
+                    v = '-' + v;
+                }
+                if (status_opts !== '') {
+                    status_opts += ',';
+                }
+                status_opts += v;
+            });
+            
+            $('#filter-location option:selected').each(function() {
+                var v = $(this).val();
+                if ($(this).data('tristate') === 'tri-mix') {
+                    v = '-' + v;
+                }
+                if (location_opts !== '') {
+                    location_opts += ',';
+                }
+                location_opts += v;
+            });
+            
+            $('#filter-visa option:selected').each(function() {
+                var v = $(this).val();
+                if ($(this).data('tristate') === 'tri-mix') {
+                    v = '-' + v;
+                }
+                if (visa_opts !== '') {
+                    visa_opts += ',';
+                }
+                visa_opts += v;
+            });
+            
+            $('#filter-how option:selected').each(function() {
+                var v = $(this).val();
+                if ($(this).data('tristate') === 'tri-mix') {
+                    v = '-' + v;
+                }
+                if (how_opts !== '') {
+                    how_opts += ',';
+                }
+                how_opts += v;
+            });
+            
+            var country = $('#filter-country').val() || '';
+            
+            var date_start = $('#filter-datestart').val();
+            var date_end = $('#filter-dateend').val();
+            
+            // feed filter values to datatable
+            $table.column(1).search(status_opts);
+            $table.column(2).search(position_opts);
+            $table.column(3).search(location_opts);
+            $table.column(7).search(date_start+'|'+date_end);
+            $table.column(8).search(visa_opts);
+            $table.column(9).search(country);
+            $table.column(10).search(how_opts);
+            
+            if (position_opts+status_opts+location_opts+visa_opts+how_opts+country+date_start+date_end === '') {
+                // filter reset
+                $('#filter-label').removeClass('filtered');
+            } else {
+                $('#filter-label').addClass('filtered');
+            }
+            
+            $table.draw();
+        }
+        
+        $(document).on('click', '#filter-reset', function() {
+            $('#filter-position option:selected').each(function() {
+                $(this).data('tristate', 'tri-off');
+            });
+            $('#filter-position').dropdowntricblist('refresh');
+            
+            $('#filter-status option:selected').each(function() {
+                $(this).data('tristate', 'tri-off');
+            });
+            $('#filter-status').dropdowntricblist('refresh');
+            
+            $('#filter-location option:selected').each(function() {
+                $(this).data('tristate', 'tri-off');
+            });
+            $('#filter-location').dropdowntricblist('refresh');
+            
+            $('#filter-visa option:selected').each(function() {
+                $(this).data('tristate', 'tri-off');
+            });
+            $('#filter-visa').dropdowntricblist('refresh');
+            
+            $('#filter-how option:selected').each(function() {
+                $(this).data('tristate', 'tri-off');
+            });
+            $('#filter-how').dropdowntricblist('refresh');
+            
+            // reset anchor data
+            $('.three_state_cb_link').removeClass('tri-on tri-mix').addClass('tri-off');
+            
+            $('#filter-country').val('');
+            $('#filter-datestart').val('');
+            $('#filter-dateend').val('');
+            
+            updateDaterangeLabel('filter');
+        });
+        
+        $(document).on('click', '#filter-go', function() {
+            filterHandle();
+            setCookie();
+        });
+        
+        // init daterange picker
+        $('#daterange').daterangepicker({
+            ranges: {
+                'Today': [today, today],
+                'Yesterday': [moment().subtract('days', 1), moment().subtract('days', 1)],
+                'Last 7 Days': [moment().subtract('days', 6), today],
+                'Last 30 Days': [moment().subtract('days', 29), today],
+                'This Month': [moment().startOf('month'), moment().endOf('month')],
+                'Last Month': [moment().subtract('month', 1).startOf('month'), moment().subtract('month', 1).endOf('month')],
+            },
+            opens: 'left',
+            format: 'YYYY-MM-DD',
+            startDate: yearstart,
+            endDate: today,
+            drops: 'up',
+        },
+        function(start, end) {
+            updateDaterangeLabel('daterange', start, end);
+            var f = start.format("MM/DD/YYYY") + '|' + end.format("MM/DD/YYYY");
+            var filters = [];
+            filters[COLUMNS['dateapplied']] = f;
+            $table.trigger('search', [filters]);
+        });
+        $('#daterange').on('cancel.daterangepicker', function(ev, picker) {
+            updateDaterangeLabel('daterange');
+        });
+        
+        // Database filter daterange picker
+        $(document).on('click', '#filter-dateapplied, #ts-dateapplied', function(e) {
+            e.preventDefault();
+        });
+        $('#filter-dateapplied').daterangepicker({
+            ranges: {
+                'Today': [today, today],
+                'Yesterday': [moment().subtract('days', 1), moment().subtract('days', 1)],
+                'Last 7 Days': [moment().subtract('days', 6), today],
+                'Last 30 Days': [moment().subtract('days', 29), today],
+                'This Month': [moment().startOf('month'), moment().endOf('month')],
+                'Last Month': [moment().subtract('month', 1).startOf('month'), moment().subtract('month', 1).endOf('month')],
+            },
+            format: 'YYYY-MM-DD',
+            startDate: yearstart,
+            endDate: today,
+            opens: 'left',
+            drops: 'up',
+            },
+            function(start, end) {
+                updateDaterangeLabel('filter', start, end);
+            }
+        );
+        // update date range label
+        $('#filter-dateapplied').on('cancel.daterangepicker', function(ev, picker) {
+            updateDaterangeLabel('filter');
+        });
+        
+        $('#ts-dateapplied').daterangepicker({
+            ranges: {
+                'Today': [today, today],
+                'Yesterday': [moment().subtract('days', 1), moment().subtract('days', 1)],
+                'Last 7 Days': [moment().subtract('days', 6), today],
+                'Last 30 Days': [moment().subtract('days', 29), today],
+                'This Month': [moment().startOf('month'), moment().endOf('month')],
+                'Last Month': [moment().subtract('month', 1).startOf('month'), moment().subtract('month', 1).endOf('month')],
+            },
+            format: 'YYYY-MM-DD',
+            startDate: yearstart,
+            endDate: today,
+            drops: 'up',
+            },
+            function(start, end) {
+                updateDaterangeLabel('ts', start, end);
+                var f = start.format("MM/DD/YYYY") + '|' + end.format("MM/DD/YYYY");
+                var filters = [];
+                var colnum = +COLUMNS['dateapplied'] + 1;
+                $('.tablesorter-filter-row td:nth-child('+colnum+')').find('input').val(f).trigger('change');
+            }
+            
+        );
+        $('#ts-dateapplied').on('cancel.daterangepicker', function(ev, picker) {
+            updateDaterangeLabel('ts');
+        });
+        
+        // save filter in cookie
+        $(document).on('change', '#ts-future', function(e) {
+            setCookie();
+        });
+        
+        function initDatepicker(element, aid) {
+            // scheduled interview dates
+            var $this = $(element);
+            var $dp = $this.datepicker({
+                format: 'M dd yyyy',
+                daysOfWeekDisabled: '0,6',
+                todayBtn: 'linked',
+                autoclose: true,
+                todayHighlight: true,
+            });
+            var dobj = new Date($this.val());
+            var d = getShortMonthName(dobj.getMonth())+' '+dobj.getDate()+' '+dobj.getFullYear();
+            $this.datepicker('setDate', d);
+            $this.datepicker('update');
+            $this.hide();
+            
+            $dp.on('hide', function(e) {
+                $this.hide();
+                $this.prev().show();
+            });
+            $dp.on('changeDate', function(e) {
+                $.ajax({
+                    url: '{{=URL("interviewUpdate")}}',
+                    dataType: 'json',
+                    data: {
+                        application_id: aid,
+                        interview_id: $this.data('interviewid'),
+                        date: e.date.getFullYear()+'-'+(e.date.getMonth()+1)+'-'+e.date.getDate(),
+                        updater: socketid,
+                        }
+                })
+                .done(function(data) {
+                    var d = getShortMonthName(e.date.getMonth())+' '+e.date.getDate()+' '+e.date.getFullYear();
+                    $this.prev().text(d);
+                })
+                .fail(function(e) {
+                    alert('Faile to update interview');
+                });
+            });
+        }
+        
+        function checkTabData(aid, future) {
+            if ($('#'+aid).length === 0) {
+                // not on current view, ajax it
+                $.ajax({
+                    url: '{{=URL("getApplicationContent")}}',
+                    data: {id:aid},
+                    dataType: 'json',
+                })
+                .done(function(data) {
+                    if (data == undefined || data === '' || data.content === '') {
+                        // invalid id?
+                        $('#error-dlg-body').html('Invalid application id.');
+                        $('#error-dlg').modal('show');
+                    } else {
+                        if (data.future === 1) {
+                            var future_cls = ' future';
+                            var future_title = ' title="Future Consideration"';
+                        } else {
+                            var future_cls = '';
+                            var future_title = '';
+                        }
+                        
+                        var tab_id = 'label-'+aid;
+                        if ($('#'+tab_id).length) {
+                            // tab already exists, select it
+                            var index = $('#detail-tabs li[id="'+tab_id+'"]').index();
+                            $('#detail-tabs').tabs('option', 'active', index);
+                        } else {
+                            var tab_label = data.label;
+                            // build detail view of applicant
+                            var li = '<li id="label-' + aid + '" class="boot-tab-li ui-tabs-selected ui-state-active'+future_cls+'" data-tab="tab-' + aid + '"'+future_title+'><a href="#tab-' + aid + '">' + tab_label + '</a><span class="tabclose fa fa-times" role="ui-icon-close presentation"></span></li>';
+                            var ul = $('#detail-tabs').find('.ui-tabs-nav');
+                            ul.append(li);
+                            
+                            $('#detail-tabs').append('<div id="tab-' + aid + '" class="boot-tab-div'+future_cls+'">' + data.content + '</div>');
+                            
+                            var num_tabs = ul.children().length;
+                            $('#detail-tabs').tabs('refresh').tabs('option', 'active', num_tabs-1);
+                            $('#clear-tabs').show();
+                            
+                            // init datepicker
+                            var $idatepicker = $('#tab-'+aid+' .interview-date');
+                            var i = today;
+                            var idpval = $idatepicker.val();
+                            if (idpval) {
+                                i = new Date(idpval.replace('-','/'));
+                            }
+                            var $idp = $idatepicker.datepicker({
+                                format: 'M dd yyyy',
+                                startDate: today,
+                                todayBtn: 'linked',
+                                autoclose: true,
+                                todayHighlight: true,
+                            });
+                            $idatepicker.datepicker('setDate', i);
+                            $idatepicker.datepicker('update');
+                            
+                            // scheduled interview dates
+                            $('#tab-'+aid+' .date-edit').each(function() {
+                                initDatepicker(this, aid);
+                            });
+                            {{if not hr_permission:}}
+                            if ($('#interview-cell-'+aid+' > .interview-'+aid+'.pending').length > 0) {
+                                $('#status-' + aid).find('option[value="2"]').remove();
+                            }
+                            {{pass}}
+                            
+                            // init cc tagit
+                            $('#commentcc-'+aid).tagsinput({
+                                tagClass: function(item) {
+                                    switch (item.type) {
+                                        case 'Group': return 'label label-primary';
+                                        default: return 'label label-default';
+                                    }
+                                },
+                                itemValue: 'value',
+                                itemText: 'label',
+                                typeaheadjs: {
+                                    name: 'users',
+                                    displayKey: 'label',
+                                    source: users.ttAdapter(),
+                                }
+                            });
+                            
+                        }
+                    }
+                    $('body,html').animate({scrollTop:$('#'+tab_id).offset().top-60},300);
+                    
+                });
+            } else {
+                tabit(aid);
+            }
+        }
+        
+        /*
+        Create tab
+        @param aid: application id (int)
+        */
+        function tabit(aid) {
+            
+            var tab_id = 'label-'+aid;
+            if ($('#'+tab_id).length) {
+                // tab already exists, select it
+                var index = $('#detail-tabs li[id="'+tab_id+'"]').index();
+                $('#detail-tabs').tabs('option', 'active', index);
+            } else {
+                var $row = $('#'+aid);
+                if ($row.length === 0) {
+                    alert("You're currently ignoring applications to this position.\nTo view this applicant you must update your Watch List.");
+                    return;
+                }
+                // row data
+                var data = $table.row($row[0]).data();
+                
+                var name = data['applicant_first_name'];
+                var position = data['posting_title'];
+                var studio = data['location_name'];
+                var status_id_selected = data['status_id'];
+                
+                if (/toronto/i.test(studio)) {
+                    var studio_tag = '<span class="studio-tag label label-primary">T</span>';
+                } else {
+                    var studio_tag = '<span class="studio-tag label label-danger">N</span>';
+                }
+                var tab_label = studio_tag + '<strong>' +  name + '</strong> / ' + position;
+                
+                // build detail view of applicant
+                if ($row.hasClass('future')) {
+                    var future_cls = ' future';
+                    var future_title = ' title="Future Consideration"';
+                } else {
+                    var future_cls = '';
+                    var future_title = '';
+                }
+                var li = '<li id="label-' + aid + '" class="boot-tab-li ui-tabs-selected ui-state-active' + future_cls + '" data-tab="tab-' + aid + '"'+future_title+'><a href="#tab-' + aid + '">' + tab_label + '</a><span class="tabclose fa fa-times" role="ui-icon-close presentation"></span></li>';
+                var ul = $('#detail-tabs').find('.ui-tabs-nav');
+                ul.append(li);
+                
+                // fill in detail for template
+                var detail = '{{=XML(tab_template)}}';
+                
+                detail = detail.replace(/STATUS_SELECT/g, '{{=XML(status_select)}}');
+                detail = detail.replace(/APPLICATION_ID/g, aid);
+                detail = detail.replace(/APPLICANT_NAME/g, name);
+                detail = detail.replace(/POSTING_TITLE/g, position+' - '+studio);
+                detail = detail.replace(/STATUS_NAME/g, data['status_name']);
+                detail = detail.replace(/STATUS_ID/g, status_id_selected);
+                detail = detail.replace(/APPLICATION_DATE_APPLIED/g, data['application_date_applied']);
+                detail = detail.replace(/APPLICANT_EMAIL/g, data['applicant_email']);
+                detail = detail.replace(/APPLICANT_PHONE/g, data['applicant_phone']);
+                detail = detail.replace(/APPLICANT_COUNTRY/g, data['applicant_country']);
+                detail = detail.replace(/VISA_STATUS/g, data['visa_status']);
+                detail = detail.replace(/HEARSAY_NAME/g, data['hearsay_name']);
+                detail = detail.replace(/APPLICANT_HEARSAY_DETAIL/g, data['applicant_hearsay_detail']);
+                
+                $('#detail-tabs').append('<div id="tab-' + aid + '" class="boot-tab-div' + future_cls + '">' + detail + '</div>');
+                
+                var num_tabs = ul.children().length;
+                $('#detail-tabs').tabs('refresh').tabs('option', 'active', num_tabs-1);
+                $('#clear-tabs').show();
+                
+                var $tab = $('#tab-' + aid);
+                
+                $('#status-' + aid).val(status_id_selected);
+                // hide Interview Pending status from pms
+                {{if not hr_permission:}}
+                if (3 !== status_id_selected) {
+                    $('#status-' + aid + ' > option[value="3"]').remove();
+                }
+                // if Hired, remove all other options
+                if (6 === status_id_selected) {
+                    $('#status-' + aid).html('<option value="6">Hired</option>');
+                }
+                {{pass}}
+                
+                // attachments
+                var cover_letter = data['applicant_cover_letter'];
+                if (/^<i/.test(cover_letter)) {
+                    cover_letter = '';
+                }
+                if (cover_letter !== '') {
+                    cover_letter = cover_letter.replace('"></i>', ' inline-icon"></i> Cover Letter') + ', ';
+                }
+                var cv = data['applicant_cv_file'];
+                if (/^<i/.test(cv)) {
+                    cv = '';
+                }
+                if (cv !== '') {
+                    cv = cv.replace('"></i>', ' inline-icon"></i> CV');
+                }
+                
+                $tab.find('.applicant-attachments').append(cover_letter+cv);
+                
+                // links
+                var reel = data['applicant_reel'].replace(/fa-external-link/g, 'fa-external-link-square fa-lg').replace(/title/g, 'title="Reel"');
+                
+                var linkedin = data['applicant_linkedin'];
+                if (linkedin !== undefined && linkedin !== '' && linkedin !== null) {
+                    if (!/http/.test(linkedin)) {
+                        linkedin = 'http://'+linkedin;
+                    }
+                    linkedin = '<a href="'+linkedin+'" class="inline-icon" target="_reel" title="LinkedIn"><i class="fa fa-lg fa-linkedin-square"></i></a>';
+                } else {
+                    linkedin = '';
+                }
+                var imdb = data['applicant_imdb'];
+                if (imdb !== undefined && imdb !== '' && imdb !== null) {
+                    if (!/http/.test(imdb)) {
+                        imdb = 'http://'+imdb;
+                    }
+                    imdb = '<a href="'+imdb+'" class="inline-icon" target="_reel" title="IMDB"><i class="fa fa-lg fa-video-camera"></i></a>';
+                } else {
+                    imdb = '';
+                }
+                //var reel_detail = data['applicant_reel_detail'] ? data['applicant_reel_detail'] : '';
+                var reel_detail = data['applicant_reel_detail'] || '';
+                $tab.find('.applicant-links').append(reel+linkedin+imdb);
+                $tab.find('.applicant-reeldetail').text(reel_detail.trim());
+                
+                // interviews
+                if (data['interview_id']) {
+                    //
+                } else {
+                    $('#interview-cell-'+aid).text('None scheduled');
+                }
+                
+                //init datepicker
+                var $idatepicker = $('#tab-'+aid).find('.interview-date');
+                var d = today;
+                var idpval = $idatepicker.val();
+                if (idpval) {
+                    d = new Date(idpval.replace('-','/'));
+                }
+                
+                var $dp = $idatepicker.datepicker({
+                    format: 'M dd yyyy',
+                    startDate: today,
+                    todayBtn: 'linked',
+                    autoclose: true,
+                    todayHighlight: true,
+                });
+                $dp.datepicker('setDate', d);
+                $dp.datepicker('update');
+                
+                // init cc tagit
+                $('#commentcc-'+aid).tagsinput({
+                    tagClass: function(item) {
+                        switch (item.type) {
+                            case 'Group': return 'label label-primary';
+                            default: return 'label label-default';
+                        }
+                    },
+                    itemValue: 'value',
+                    itemText: 'label',
+                    typeaheadjs: {
+                        name: 'users',
+                        displayKey: 'label',
+                        source: users.ttAdapter(),
+                    }
+                });
+                
+                try {
+                    var applicantid = adata['applicant_id'];
+                } catch (e) {
+                    var applicantid = $row.data('applicantid');
+                }
+                getAllApplications(applicantid, aid);
+            }
+            
+            // load comments
+            get_comments(aid);
+            $('body,html').animate({scrollTop:$('#'+tab_id).offset().top-60},300);
+        }
+        
+        function get_comments(application_id, scolldown_id) {
+            var $comments_list = $('#comments-list-'+application_id);
+            $comments_list.empty().append(loading_icon);
+            $.ajax({
+                url: '{{=URL("getComments")}}',
+                dataType: 'html',
+                data: {
+                    application_id: application_id,
+                    updater: socketid,
+                    }
+            })
+            .done(function(data) {
+                // refresh comments list
+                $comments_list.empty();
+                if (data !== '' && data !== null) {
+                    $comments_list.append(data);
+                }
+                if (typeof scolldown_id !== 'undefined') {
+                    $('body').animate({scrollTop:$(scolldown_id).offset().top-100},300);
+                }
+                $('#label-'+application_id).tooltip();
+                $('#tab-'+application_id+' *').tooltip();
+            });
+        }
+        
+        /* interview date edit */
+        $(document).on('click', '.date-editor', function() {
+            var $this = $(this);
+            var $editor = $this.next();
+            var width = $this.width() - 10;
+            $this.hide();
+            $editor.width(width+'px').show().focus();
+        });
+        
+        function status_update(application_id, status_id) {
+            $.ajax({
+                url: '{{=URL("updateStatus")}}',
+                dataType: 'json',
+                data: {
+                    application_id: application_id,
+                    status_id: status_id,
+                    updater: socketid,
+                }
+            })
+            .done(function(data) {
+                var $row = $('tr#'+application_id);
+                if ($row.length) {
+                    $table.ajax.reload(null, false);
+                }
+            })
+            .fail(function() {
+                alert('Failed to update stastus.\nPlease reload and try again.');
+            });
+        }
+        
+        /*
+        Application Links
+        Allow links for application tabs
+        */
+        function handleHash(hash) {
+            if (/application-/.test(hash)) {
+                // application link
+                var application_id = hash.split('-')[1];
+                checkTabData(application_id);
+            }
+        }
+        
+        function getLocationHash() {
+            return window.location.hash || '#main';
+        }
+        window.onhashchange = function(e) {
+            handleHash(getLocationHash());
+        };
+        
+        
+        /* initial */
+        
+        // init tabs
+        $('#detail-tabs').tabs()
+        .delegate('.tabclose', 'click', function() {
+            var panelId = $(this).closest('li').remove().data('tab');
+            $('#' + panelId).remove();
+            $('#detail-tabs').tabs('refresh');
+            if ($('#detail-tabs li').length === 0) {
+                $('#clear-tabs').hide();
+            }
+            // remove any leftover tooltips
+            $('#detail-tabs .tooltip').remove();
+        });
+        
+        // auto height comment textarea
+        $(document).on('keyup', '.comment-input', function(e) {
+            this.style.height = '24px';
+            var adjust_height = this.scrollHeight;
+            if (navigator.userAgent.indexOf('Firefox')!=-1) {
+                adjust_height += 30;
+            }
+            this.style.height = adjust_height + 'px';
+        });
+        
+        $(document).on('change', '#filter-location', function() {
+            if ($(this).val() === '') {
+                $('#cba > button').addClass('disable');
+            } else {
+                $('#cba > button').removeClass('disable');
+            }
+        });
+        
+        $('#filter-daterange span').html("");
+        $('#filter-date-start').val("");
+        $('#filter-date-end').val("");
+        
+        $('.tablesorter-filter').addClass('form-control');
+        
+        /* open Daterangepicker on date applied column filter */
+        $(document).on('click', '.tablesorter-filter', function() {
+            if($(this).data('column') == COLUMNS['dateapplied']) {
+                $('#daterange').trigger('click');
+            }
+        });
+        
+        
+        $(document).on('change', '.status-update', function() {
+            var $this = $(this);
+            var application_id = $this.data('applicationid');
+            var fromval = $this.data('org');
+            if (fromval == 3) {
+                {{if not hr_permission:}}
+                $('#status-'+application_id+' > option[value="3"]').remove();
+                {{pass}}
+            }
+            
+            var curval = $this.data('org');
+            var toval = $this.val();
+            
+            if (toval == 3) {
+                $this.addClass('input-limbo').blur();
+                $('#interview-'+application_id).show();
+            } else if (toval !== curval) {
+                $this.data('org', toval);
+                status_update(application_id, toval);
+                hideInterviewSchedule(application_id);
+            } else {
+                hideInterviewSchedule(application_id);
+            }
+        });
+        
+        /*
+        Create interview (schedule)
+        */
+        /* interview actions */
+        $(document).on('click', '.interview-set', function(e) {
+            var application_id = $(this).parent().data('applicationid');
+            var d = $(this).parent().prev().datepicker('getDate');
+            $('#status-'+application_id).removeClass('input-limbo');
+            
+            var iviewer = '';
+            // ajax call
+            $.ajax({
+                url: '{{=URL("interviewCreate")}}',
+                data: {
+                    application_id: application_id,
+                    dataType: 'json',
+                    date: d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(),
+                    interviewer: iviewer,
+                    updater: socketid,
+                }
+            })
+            .done(function(data) {
+                if (data) {
+                    $('#interview-'+application_id).hide();
+                    if (typeof data === 'string') {
+                        data = JSON.parse(data);
+                    }
+                    // insert interview entry
+                    if (data.content !== '') {
+                        if ($('#interview-cell-'+application_id+' > .interview-detail').length === 0) {
+                            $('#interview-cell-'+application_id).empty();
+                        }
+                        $('#interview-cell-'+application_id).prepend(data.content);
+                        
+                        var $this = $('#interview-cell-'+application_id+' > .interview-detail:first-child .date-edit');
+                        initDatepicker($this[0], application_id);
+                        var $row = $('tr#'+application_id);
+                        if ($row.length) {
+                            $table.ajax.reload(null, false);
+                        }
+                    } else {
+                        alert('error interview');
+                    }
+                }
+            })
+            .fail(function(e) {
+                alert('error scheduling interview');
+            });
+        });
+        
+        function hideInterviewSchedule(application_id) {
+            $('#interview-'+application_id).hide();
+            var $status_select = $('#status-'+application_id);
+            $status_select.val($status_select.data('org')).removeClass('input-limbo');
+        }
+        /* close interview datepicker */
+        $(document).on('click', '.interview-cancel', function(e) {
+            var application_id = $(this).parent().data('applicationid');
+            hideInterviewSchedule(application_id);
+        });
+        
+        $(document).on('click', '.interview-delete', function() {
+            if (confirm("Cancel this interview?")) {
+                var $this = $(this);
+                var $icell = $this.parent();
+                var iid = +$this.data('interviewid');
+                var i_application_id = $this.data('application');
+                var $i_status = $('#status-'+i_application_id);
+                var $i_interviews = $('#interview-cell-'+i_application_id);
+                
+                var application_id = +$this.closest('.boot-tab-div').attr('id').split('-')[1];
+                var $status = $('#status-'+application_id);
+                var $interviews = $('#interview-cell-'+application_id);
+                
+                $.ajax({
+                    url:'{{=URL("interviewDelete")}}',
+                    data: {
+                        application_id: i_application_id,
+                        interview_id: iid,
+                        updater: socketid,
+                    }
+                })
+                .done(function(data) {
+                    $icell.remove();
+                    
+                    if ($i_status.val() === '3') {
+                        $i_status.val(14);
+                    }
+                    if ($i_interviews.find('.interview-detail').length === 0) {
+                        $i_interviews.text('None scheduled');
+                    }
+                    
+                    var status_changed = false;
+                    if (application_id !== i_application_id) {
+                        $('#interview-detail-'+iid).remove();
+                        if ($interviews.find('.interview-detail').length === 0) {
+                            $interviews.text('None scheduled');
+                            if ($status.val() === '3') {
+                                $status.val(14);
+                                status_changed = true;
+                            }
+                        }
+                    } else {
+                        status_changed = true;
+                    }
+                    if (status_changed) {
+                        var $row = $('tr#'+application_id);
+                        if ($row.length) {
+                            $table.ajax.reload(null, false);
+                        }
+                    }
+                    
+                })
+                .fail(function() {
+                    alert('error cancelling Interview');
+                });
+            }
+        });
+        
+        // table row click
+        $(document).on('click', '.dataTable > tbody > tr', function() {
+            var name = $(this).children(':first').text();
+            var application_id = this.id;
+            checkTabData(application_id);
+        });
+        
+        $(document).on('click','.tab-link', function() {
+            var name = $(this).parent().data('applicant');
+            var application_id = $('span', this).data('application');
+            checkTabData(application_id);
+        });
+        
+        // ticker link
+        $(document).on('click', '.applicant', function() {
+            var name = $(this).text();
+            var aid = $(this).attr('href').split('-')[1];
+            checkTabData(aid);
+        });
+        
+        
+        // close all tabs
+        $(document).on('click', '#clear-tabs', function(e) {
+            $('#detail-tabs li').each(function(i, elem) {
+                var panelId = $(elem).remove().data('tab');
+                $('#' + panelId).remove();
+            });
+            $('#detail-tabs .tooltip').remove();
+            $('#detail-tabs').tabs('refresh');
+            $(this).hide();
+            e.preventDefault();
+        });
+        
+        $(document).on('click', '.comment-submit', function() {
+            // validate
+            var application_id = $(this).data('application');
+            var $comment_text = $('#commenter-text-'+application_id);
+            var text = $comment_text.val();
+            
+            if (text === '') {
+                $comment_text.parent().addClass('has-error')
+                return;
+            } else {
+                $comment_text.parent().removeClass('has-error')
+            }
+            
+            var emails = [];
+            var $cc = $('#commentcc-'+application_id);
+            if (!$cc.parent().hasClass('sb-cc-closed')) {
+                var items = $cc.tagsinput('items');
+                for (x in items) {
+                    emails.push(items[x].value);
+                }
+            }
+            
+            /* get application info */
+            var $label = $('#label-'+application_id+'>a');
+            var tmp = $label.text();
+            var location = tmp[0] == 'T' ? 'Toronto':'New York';
+            var apposition = tmp.slice(1);
+            
+            $('#comment-'+application_id).prepend(loading_overlay);
+            
+            $.ajax({
+                url: '{{=URL("addComment")}}',
+                dataType: 'json',
+                data: {
+                    application_id: application_id,
+                    content: text,
+                    updater: socketid,
+                    cc: emails,
+                    apposition: apposition,
+                    location: location,
+                }
+            })
+            .done(function(data) {
+                $('#ov').remove();
+                if (data.id !== 0) {
+                    // success - refresh comments list
+                    $comment_text.val('');
+                    $cc.tagsinput('removeAll');
+                    $cc.parent().find('.tt-input').val('');
+                    
+                    var comment_li = '{{=XML(comment_template)}}'.format(data.poster, data.date, text, data.id, application_id, 'comment');
+                    $('#comments-list-'+application_id).prepend(comment_li);
+                    comment_counter(application_id, 'add');
+                } else {
+                    alert('Error! Comment not created.');
+                }
+            });
+        });
+        
+        $(document).on('click', '.reply-icon', function() {
+            var $this = $(this);
+            $this.closest('.comments').find('.reply-input').removeClass('in'); // collapse all reply inputs
+            var $reply_input_parent = $this.closest('.app-comment').find('.reply-input');
+            $reply_input_parent.addClass('in');
+            var reply_text = $reply_input_parent.find('input').val();
+        });
+        
+        $(document).on('click', '.reply-submit', function() {
+            var $parent = $(this).parent();
+            var $reply_input = $(this).prev();
+            var text = $reply_input.val().trim();
+            if (text.length < 2) {
+                $reply_input.parent().addClass('has-error');
+                return;
+            }
+            $reply_input.parent().removeClass('has-error');
+            
+            var application_id = $(this).data('application');
+            var comment_id = $(this).data('comment');
+            
+            /* get application info */
+            var $label = $('#label-'+application_id+'>a');
+            var tmp = $label.text();
+            var location = tmp[0] == 'T' ? 'Toronto':'New York';
+            var apposition = tmp.slice(1);
+            var emails = [];
+            
+            $('#comment-'+application_id).prepend(loading_overlay);
+            
+            $.ajax({
+                url: '{{=URL("addReply")}}',
+                dataType: 'json',
+                data: {
+                    application_id: application_id,
+                    comment_id: comment_id,
+                    content: text,
+                    updater: socketid,
+                    cc: emails,
+                    apposition: apposition,
+                    location: location,
+                }
+            })
+            .done(function(data) {
+                $('#ov').remove();
+                if (data.id !== 0) {
+                    $parent.removeClass('in');
+                    // success - refresh comments list
+                    $reply_input.val('');
+                    var $reply_li = $('{{=XML(comment_template)}}'.format(data.poster, data.date, text, data.id , application_id, 'comment'));
+                    $reply_li.find('.reply-icon, .reply-input, .ul-reply').remove();
+                    {{if not hr_permission:}}
+                      $reply_li.find('.delete-icon').remove();
+                    {{pass}}
+                    $('#comment-'+comment_id).find('.ul-reply').append($reply_li);
+                    
+                    comment_counter(application_id, 'add');
+                } else {
+                    alert('Error! Reply not created.');
+                }
+            });
+        });
+        
+        $(document).on('click', '.delete-icon', function() {
+            if (confirm("Are you sure you want to delete this comment?\nThis can't be undone.")) {
+                var $li = $(this).closest('li');
+                var comment_id = $li.attr('id').split('-')[1];
+                var comment_type = $li.hasClass('app-comment') ? 'comment':'reply';
+                var application_id = $(this).closest('.comments').attr('id').split('comments-list-')[1];
+                
+                $.ajax({
+                    url: '{{=URL("removeComment")}}',
+                    dataType: 'json',
+                    data: {
+                        comment_id: comment_id,
+                        comment_type: comment_type,
+                        application_id: application_id,
+                        updater: socketid,
+                    }
+                })
+                .done(function(data) {
+                    if (comment_type === 'comment') {
+                        $li.find('.comment-body').eq(0).find('.fa').remove();
+                        if (data.remove) {
+                            // empty content
+                            $li.remove();
+                        } else {
+                            // placeholder
+                            $li.find('.comment-text').eq(0).addClass('deleted-comment').html('deleted comment');
+                        }
+                    } else {
+                        // remove reply li
+                        $li.remove();
+                    }
+                    comment_counter(application_id, 'sub');
+                })
+                .fail(function() {
+                    alert("Failed to delete comment. Please contact admin.");
+                });
+            }
+        });
+        
+        /* Remove new-comment class for bg colour fade out */
+        $(document).on('hover', '.comment-container', function() {
+            $(this).removeClass('new-comment del-comment');
+        });
+        
+        /*
+        Export table as spreadsheet
+        */
+        $(document).on('click', '#export-btn', function() {
+            var $link = $('#export-link');
+            $link.removeClass(function(idx, css) {
+                return (css.match(/(?:\bfa-\w+)/g) || []).join(' ');
+            }).addClass('fa-spin fa-circle-o-notch');
+            var include_interviews = $('#interview-include').is(':checked') ? 1:0
+            $.ajax({
+                url: '{{=URL("exportSpreadsheet")}}',
+                data: {
+                    condition: '',
+                    updater: socketid,
+                    interviews: include_interviews
+                }
+            })
+            .done(function(data) {
+                // success - refresh comments list
+                $link.removeClass('fa-spin fa-circle-o-notch');
+                if (data !== '') {
+                    $link.addClass('fa-save').parent().attr('href', data);
+                } else {
+                    // error
+                    $link.addClass('fa-ban');
+                    alert('Export error');
+                }
+            });
+        });
+        
+        $(document).on('click', '#filter-submit', function(e) {
+            e.preventDefault();
+            $('#filterform').submit();
+        });
+        
+        $(document).on('click', '#filter-clear', function() {
+            $('#filterform').trigger('reset');
+            $('#filter-daterange-label').html('Applied Date Range');
+            $('#filter-datestart').val('');
+            $('#filter-dateend').val('');
+        });
+        
+        
+        // Watch list checkboxes
+        $(document).on('change', '.inline-cb', function() {
+            var $this = $(this);
+            var checked = $this.prop('checked');
+            $this.parent().find('.inline-cb').prop('checked', false);
+            $this.prop('checked', checked);
+        });
+        
+        $('#ignore-all').toggle(
+            function() {
+                $('.checkbox-grid .subcb').prop('checked', false);
+                $('.checkbox-grid .ignorecb').prop('checked', true);
+            },
+            function() {
+                $('.checkbox-grid .ignorecb').prop('checked', false);
+            }
+        );
+        
+        $('#subscribe-all').toggle(
+            function() {
+                $('.checkbox-grid .ignorecb').prop('checked', false);
+                $('.checkbox-grid .subcb').prop('checked', true);
+            },
+            function() {
+                $('.checkbox-grid .subcb').prop('checked', false);
+            }
+        );
+        
+        $(document).on('click', '#watchlist-submit', function(e) {
+            e.preventDefault();
+            $('#watchlist').modal('hide');
+            $('#loading-dlg').modal('show');
+            
+            var form_data = $('#watchlist-form').serialize();
+            //return;
+            $.ajax({
+                url: '{{=URL("updateWatchlist")}}',
+                data: form_data,
+            })
+            .done(function(data) {
+                $('#loading-dlg').modal('hide');
+            })
+            .fail(function() {
+                alert('Failed to update Watch List');
+            });
+        });
+        
+        $(document).on('click', '#gettab-id', function() {
+            $(this).select();
+        });
+        $(document).on('click', '#gettab', function() {
+            var $idinput = $('#gettab-id');
+            var aid = $idinput.val();
+            if (/\d+/.test(aid)) {
+                // check that it's a valid app id
+                checkTabData(aid);
+            } else {
+                $idinput.val('');
+            }
+        });
+        
+        $(document).on('click', '#clear-omni', function() {
+            $('#omni-box').val('').trigger('change');
+        });
+        
+        /* Scroll Back Top */
+        $(document).on('scroll', function() {
+            if ($(window).scrollTop() > 250) {
+                $('.scroll-top-wrapper').addClass('appear');
+            } else {
+                $('.scroll-top-wrapper').removeClass('appear');
+            }
+        });
+        $(document).on('click', '.scroll-top-wrapper', function() {
+            $('html,body').animate({scrollTop:0},100);
+        });
+        
+        
+        /*
+        BOOKMARK menu 
+        */
+        // username, email autocomplete
+        var users = new Bloodhound({
+            datumTokenizer: Bloodhound.tokenizers.obj.whitespace('name'),
+            queryTokenizer: Bloodhound.tokenizers.whitespace,
+            remote: {
+                url: '{{=URL("getUsernames", scheme=True, host=True)}}?term=%QUERY',
+            }
+        });
+        users.initialize();
+        
+        // init note to,cc tagit
+        $('#username-autocomplete').tagsinput({
+            tagClass: function(item) {
+                switch (item.type) {
+                    case 'Group': return 'label label-primary';
+                    default: return 'label label-default';
+                }
+            },
+            itemValue: 'value',
+            itemText: 'label',
+            typeaheadjs: {
+                name: 'users',
+                displayKey: 'label',
+                source: users.ttAdapter(),
+            }
+        });
+        
+        $(document).on('click', '#bookmark-share', function() {
+            var links = [];
+            $('.tab-pane.active li').each(function(idx) {
+                var name = $('.bm-name', this).text();
+                var status = $('.status', this).text();
+                var position = $('.bm-position', this).text();
+                var url = '{{=URL(scheme=True,host=True)}}#application-' + $(this).data('id');
+                links.push('<a href="'+url+'">'+name+' ['+status+'] '+position+'</a><br>');
+            });
+            if (links.length) {
+                var $current_tab = $('#bookmark-select option:selected');
+                
+                var url = '<a href="{{=URL("default", "importBookmarks", scheme=True, host=True)}}?bookmark=' + $current_tab.val() + '">Click to Import Bookmarks</a>';
+                $('#share-url').html(url);
+                $('#share-name').html($current_tab.text());
+                $('#share-content').html(links.join(''));
+                $('#share-dlg').modal('show');
+            } else {
+                alert('Cannot share empty list');
+            }
+        });
+        
+        $(document).on('click', '#share', function() {
+            share_submit();
+        });
+        
+        function share_submit() {
+            var emails = [];
+            var items = $('#username-autocomplete').tagsinput('items');
+            for (x in items) {
+                emails.push(items[x].value);
+            }
+            
+            if (emails.length) {
+                $('#hint').html(' ');
+                
+                body = $('#share-url').html() + '<br><br>' +
+                $('#share-msg').val().replace(/\n/g,'<br>') +
+                '<br><br><strong>' + $('#share-name').text() +
+                '</strong><ul style="list-style:none;-webkit-padding-start:20px;-moz-padding-start:20px;-webkit-padding-before:0;-moz-padding-before:0;">' +
+                $('#share-content').html() + '</ul>';
+                
+                $.ajax({
+                    url: '{{=URL("shareEmail")}}',
+                    data: {
+                        content: body,
+                        emails: emails.join(','),
+                    }
+                })
+                .done(function(data) {
+                    $('#share-dlg').modal('hide');
+                    alert('Email sent.');
+                });
+            } else {
+                $('#hint').html('Please enter valid user name');
+            }
+        }
+        
+        function addNewBookmarkList(name, value, ul) {
+            var newopt = '<option value="'+value+'">'+name+'</option>';
+            $('#bookmark-select').append(newopt);
+            if (ul !== undefined) {
+                var lis = ul.html();
+            } else {
+                var lis = '';
+            }
+            var newbookmarktab = '<div id="bookmark-'+value+'" class="tab-pane"><ul class="bookmark-list">'+lis+'</ul></div>';
+            $('#bookmark-tabs').append(newbookmarktab);
+        }
+        
+        $(document).on('click', '#bookmark-delete', function() {
+            var current_tab = $('#bookmark-select').val();
+            if (current_tab === 'temp') {
+                if ($('#bookmark-temp li').length === 0) {
+                    alert("List already empty");
+                } else {
+                    if (confirm("Clear temporary bookmarks?")) {
+                        $('#bookmark-temp > ul').empty();
+                    }
+                }
+            } else {
+                if (confirm("Delete this bookmark list?")) {
+                    $.ajax({
+                        url: '{{=URL("deleteBookmark")}}',
+                        data: {id: current_tab}
+                    })
+                    .done(function(data) {
+                        $('#bookmark-'+current_tab+' > ul').empty();
+                        $('#bookmark-select option:selected').remove();
+                    });
+                }
+            }
+        });
+        
+        $(document).on('click', '#bookmark-new', function() {
+            $('#bookmark-select').addClass('hidden');
+            $('#bookmark-new-form').removeClass('hidden').show();
+            $('.tab-pane.active').addClass('limbo');
+            $(this).prop('disabled', true);
+        });
+        $(document).on('click', '#bookmark-new-cancel', function() {
+            $('#bookmark-name').val('');
+            $('#bookmark-new-form').addClass('hidden');
+            $('#bookmark-select').removeClass('hidden');
+            $('.tab-pane.active').removeClass('limbo');
+            $('#bookmark-new').prop('disabled', false);
+        });
+        $(document).on('click', '#bookmark-new-create', function() {
+            var newname = $('#bookmark-name').val();
+            if (newname !== '') {
+                $.ajax({
+                    url: '{{=URL("newBookmark")}}',
+                    dataType: 'json',
+                    data: {name: newname},
+                })
+                .done(function(data) {
+                    if (data !== '') {
+                        addNewBookmarkList(newname, data.id);
+                        $('#bookmark-name').val('');
+                        $('#bookmark-new-form').addClass('hidden');
+                        $('#bookmark-select').removeClass('hidden').val(data.id).trigger('change');
+                        $('#bookmark-new').prop('disabled', false);
+                    }
+                });
+            }
+        });
+        
+        /* Save temp bookmark list to a new one */
+        $(document).on('click', '#bookmark-save', function() {
+            if ($('#bookmark-temp li').length === 0) {
+                alert("Nothing to save");
+            } else {
+                $('#bookmark-select').addClass('hidden');
+                $('#bookmark-save-form').removeClass('hidden').show();
+                $(this).prop('disabled', false);
+            }
+        });
+        $(document).on('click', '#bookmark-save-cancel', function() {
+            $('#bookmark-savename').val('');
+            $('#bookmark-save-form').addClass('hidden');
+            $('#bookmark-select').removeClass('hidden');
+            $('#bookmark-save').prop('disabled', false);
+        });
+        $(document).on('click', '#bookmark-save-submit', function() {
+            var name = $('#bookmark-savename').val();
+            var $ul = $('#bookmark-temp > ul').clone();
+            var appids = [];
+            $('#bookmark-temp li').each(function(idx) {
+                appids.push($(this).data('id'));
+            });
+            
+            if (appids.length) {
+                $.ajax({
+                    url: '{{=URL("newBookmark")}}',
+                    dataType: 'json',
+                    data: {
+                        name: name,
+                        appids: appids.join(','),
+                    }
+                })
+                .done(function(data) {
+                    if (data !== '') {
+                        addNewBookmarkList(name, data.id, $ul);
+                        $('#bookmark-temp > ul').empty();
+                        $('#bookmark-savename').val('');
+                        $('#bookmark-save-form').addClass('hidden');
+                        $('#bookmark-select').removeClass('hidden').val(data.id).trigger('change');
+                        $('#bookmark-save').prop('disabled', false);
+                    }
+                });
+            }
+        });
+        
+        $(document).on('click', '#bookmark-edit', function() {
+            $('#bookmark-select').addClass('hidden');
+            $('#bookmark-edit-form').removeClass('hidden').show();
+            $(this).prop('disabled', true);
+        });
+        $(document).on('click', '#bookmark-edit-cancel', function() {
+            $('#bookmark-editname').val('');
+            $('#bookmark-edit-form').addClass('hidden');
+            $('#bookmark-select').removeClass('hidden');
+            $('#bookmark-edit').prop('disabled', false);
+        });
+        $(document).on('click', '#bookmark-edit-submit', function() {
+            var name = $('#bookmark-editname').val();
+            if (name !== '') {
+                var $cur_opt = $('#bookmark-select option:selected');
+                $.ajax({
+                    url: '{{=URL("updateBookmark")}}',
+                    dataType: 'json',
+                    data: {
+                        id: $cur_opt.val(),
+                        name: name,
+                    },
+                })
+                .done(function(data) {
+                    $cur_opt.text(name);
+                    $('#bookmark-editname').val('');
+                    $('#bookmark-edit-form').addClass('hidden');
+                    $('#bookmark-select').removeClass('hidden');
+                    $('#bookmark-edit').prop('disabled', false);
+                });
+            }
+        });
+        
+        $(document).on('change', '#bookmark-select', function() {
+            var val = $(this).val();
+            $('.tab-pane.active').removeClass('active');
+            $('#bookmark-'+val).addClass('active');
+            // switch share-save buttons
+            if (val === 'temp') {
+                $('#bookmark-share').hide();
+                $('#bookmark-save').show();
+                $('#bookmark-edit').addClass('disabled');
+            } else {
+                $('#bookmark-save').hide();
+                $('#bookmark-share').removeClass('hidden').show();
+                $('#bookmark-edit').removeClass('disabled');
+            }
+        });
+        
+        // bookmark icon
+        $(document).on('click', '.bookmarker', function() {
+            var $this = $(this);
+            var appid = $this.data('applicationid');
+            var status = $this.data('status');
+            var current_tab = $('#bookmark-select').val();
+            var current_list_id = '#bookmark-'+current_tab;
+            
+            // open boomark panel
+            if (!$('#bookmark-toggle').hasClass('active')) {
+                $('#bookmark-toggle').trigger('click');
+            }
+            
+            // first find out if currently selected bookmark list has this app
+            var $existing = $(current_list_id + ' li[data-id="'+appid+'"]');
+            if ($existing.length) {
+                // exists, just update the status
+                $existing.find('.status').html(status);
+                $existing.addClass('flash');
+                setTimeout(function() {
+                    $existing.removeClass('flash');
+                }, 2000);
+                
+            } else {
+                var name = $this.data('name');
+                var position = $this.data('position');
+                var bookmark_tag = '<li class="bookmark-item" data-id="'+appid+'">'+
+                '<div class="leftside"><div><span class="bm-name">' + name + 
+                '</span> <span class="status label label-default">' + status + '<span></div>' +
+                '<div class="bm-position">' + position + '</div></div>' +
+                '<div class="rightside"><span class="bookmark-remove"><i class="fa fa-times"></i></span></div></li>';
+                $(current_list_id + ' > ul').append(bookmark_tag);
+            }
+            // if current list is not TEMP, save
+            if (current_tab !== 'temp') {
+                // save
+                var appids = [];
+                $(current_list_id + ' li').each(function(idx) {
+                    appids.push($(this).data('id'));
+                });
+                
+                if (appids.length) {
+                    $.ajax({
+                        url: '{{=URL("updateBookmark")}}',
+                        data: {
+                            id: current_tab,
+                            appids: appids.join(','),
+                        },
+                    })
+                    .done(function(data) {
+                        //alert('Bookmarks saved');
+                    });
+                }
+            }
+        });
+        
+        $(document).on('click', '.bookmark-remove', function() {
+            var bookmark_id = $('#bookmark-select').val();
+            var $ul = $(this).closest('ul');
+            $(this).closest('li').remove();
+            var appids = [];
+            $ul.find('li').each(function(idx) {
+                appids.push($(this).data('id'));
+            });
+            
+            if ('temp' !== $('#bookmark-select').val()) {
+                $.ajax({
+                    url:'{{=URL("updateBookmark")}}',
+                    data:{
+                        id: bookmark_id,
+                        appids: appids.join(','),
+                    }
+                })
+                .done(function(data) {
+                    console.log('updated');
+                });
+            }
+        });
+        
+        $(document).on('click', '.bookmark-item > .leftside', function() {
+            var appid = $(this).parent().data('id');
+            checkTabData(appid);
+        });
+        
+        /* table row comment counter update */
+        function comment_counter(appid, op) {
+            // update table row counter
+            var $row = $('tr#'+appid);
+            if ($row.length) {
+                var $counter = $row.find('.label-counter');
+                if ($counter.length) {
+                    var val = +$counter.text();
+                    if (op === 'add') {
+                        val++;
+                    } else if (op === 'sub') {
+                        val--;
+                    }
+                    if (val > 0) {
+                        $counter.text(val);
+                    } else {
+                        $counter.remove();
+                    }
+                } else if (op === 'add') {
+                    // first comment - create counter
+                    var $td = $row.find('td').first();
+                    var name = $td.text();
+                    var counter = '<span class="label label-counter label-primary pull-right">1</span>';
+                    $td.html(name + ' ' + counter);
+                } else {
+                    //console.log('counter not found');
+                }
+            } else {
+                //console.log('row not visible');
+            }
+        }
+        
+        /*
+        Show notification bar at the top
+        */
+        function notification(n) {
+            if (n !== '') {
+                var $n = $(n);
+                $('.navbar-fixed-top').before($n);
+                $n.animate({top:'50'}, 500);
+            }
+            $table.draw(false);
+        }
+        
+        // load
+        handleHash(getLocationHash());
+        
+        
+        /*
+        BROADCAST
+        */
+        
+        var subscribed_postings = {{=subscribed}}; // array of ints
+        var reload_auto = true;
+        var manual_close = false;
+        
+        function WebSocketClient(serverURI) {
+            this.STATE_DISCONNECTED = 0;
+            this.STATE_CONNECTED = 1;
+            this.STATE_CONNECTING = 2;
+            this.STATE_CLOSED = 3;
+            
+            this.serverURI = serverURI;
+            this.ws = new WebSocket("ws://"+serverURI);
+            this.ws.onopen = function() {
+                console.log('websocket opened');
+            };
+            this.ws.onmessage = function(e) {
+                var data = JSON.parse(e.data);
+                if (data.type === 'open') {
+                    // set my socket id
+                    socketid = data.value;
+                } else if (data.type === 'update') {
+                    
+                    if (data.value !== socketid) {
+                        // you didn't update, requires reload - show message, start countdown till force reload
+                        //console.log(data);
+                        switch (data.target) {
+                            case 'status':
+                                // update table row if visible
+                                var $row = $('tr#'+data.applicationid);
+                                if ($row.length) {
+                                    $table.ajax.reload(null, false);
+                                }
+                                // update detail tab if visible
+                                var $status_select = $('#status-'+data.applicationid);
+                                $status_select.val(data.targetdata.id);
+                                notification(data.notify);
+                                update_ticker();
+                                break;
+                            case 'interview-create':
+                                var $row = $('tr#'+data.applicationid);
+                                if ($row.length) {
+                                    $table.ajax.reload(null, false);
+                                }
+                                var $opt = $('#status-'+data.applicationid+' option[value="2"]');
+                                $opt.after('<option value="3">Interview Pending</option>');
+                                $('#status-'+data.applicationid).val(3);
+                                $opt.remove();
+                                
+                                var $interviewcell = $('#interview-cell-'+data.applicationid);
+                                if ($('#interview-cell-'+data.applicationid+' > .interview-detail').length === 0) {
+                                    $interviewcell.empty();
+                                }
+                                //data.targetdata
+                                var $idiv = $('{{=XML(interview_template)}}'.format(data.targetdata.datestr,data.targetdata.date,data.targetdata.id,data.targetdata.position,data.targetdata.location,data.targetdata.loctag,data.applicationid));
+                                {{if not hr_permission:}}
+                                  $idiv.find('.interview-delete').remove();
+                                {{pass}}
+                                $interviewcell.prepend($idiv);
+                                
+                                var $this = $('#interview-cell-'+data.applicationid+' > .interview-detail:first-child .date-edit');
+                                initDatepicker($this[0], data.applicationid);
+                                notification(data.notify);
+                                update_ticker();
+                                break;
+                            case 'interview-update':
+                                var d = new Date(data.targetdata.date);
+                                $('#interview-detail-'+data.targetdata.id+' .date-edit').datepicker('update', d);
+                                var t = getShortMonthName(d.getMonth())+' '+d.getDate()+' '+d.getFullYear();
+                                $('#interview-detail-'+data.targetdata.id+' .date-display').html(t);
+                                break;
+                            case 'interview-complete':
+                                var $row = $('tr#'+data.applicationid);
+                                if ($row.length) {
+                                    $table.ajax.reload(null, false);
+                                }
+                                // update detail tab if visible
+                                var $status_select = $('#status-'+data.applicationid);
+                                $status_select.val(data.targetdata.id);
+                                break;
+                            case 'interview-delete':
+                                $('#interview-detail-'+data.targetdata.id+'.interview-'+data.applicationid).remove();
+                                if (data.targetdata.status !== '') {
+                                    var $status_select = $('#status-'+data.applicationid);
+                                    $status_select.val(data.targetdata.status);
+                                    var $ic = $('#interview-cell-'+data.applicationid);
+                                    if ($ic.find('.interview-detail').length === 0) {
+                                        $ic.html('None scheduled');
+                                    }
+                                    var $row = $('tr#'+data.applicationid);
+                                    if ($row.length) {
+                                        $table.ajax.reload(null, false);
+                                    }
+                                }
+                                $('#status-'+data.applicationid+' option[value="7"]').after('<option value="2">Interview Request</option>');
+                                break;
+                            case 'comment-add':
+                                var $comments_ul = $('#comments-list-'+data.applicationid);
+                                if ($comments_ul.length) {
+                                    var $comment_li = $('{{=XML(comment_template)}}'.format(data.targetdata.poster, data.targetdata.date, data.targetdata.content, data.targetdata.id, data.applicationid, 'comment'));
+                                    {{if not hr_permission:}}
+                                      $comment_li.find('.delete-icon').remove();
+                                    {{pass}}
+                                    $comments_ul.prepend($comment_li);
+                                }
+                                // update table row counter
+                                comment_counter(data.applicationid, 'add');
+                                notification(data.notify);
+                                update_ticker();
+                                break;
+                            case 'comment-remove':
+                                $('#comment-'+data.targetdata).fadeOut().remove();
+                                comment_counter(data.applicationid, 'sub');
+                                break;
+                            case 'comment-remove-empty':
+                                var $comment_li = $('#comment-'+data.targetdata);
+                                $comment_li.find('.comment-container').eq(0).addClass('del-comment').find('.comment-body').html('<span class="deleted-comment">deleted comment</span>');
+                                comment_counter(data.applicationid, 'sub');
+                                break;
+                            case 'reply-add':
+                                var $comment_li = $('#comment-'+data.targetdata.parent);
+                                if ($comment_li.length) {
+                                    var $reply_li = $('{{=XML(comment_template)}}'.format(data.targetdata.poster, data.targetdata.date, data.targetdata.content, data.targetdata.id , data.applicationid, 'comment'));
+                                    $reply_li.find('.reply-icon, .reply-input, .ul-reply').remove();
+                                    {{if not hr_permission:}}
+                                      $reply_li.find('.delete-icon').remove();
+                                    {{pass}}
+                                    $comment_li.find('.ul-reply').append($reply_li);
+                                }
+                                comment_counter(data.applicationid, 'add');
+                                notification(data.notify);
+                                update_ticker();
+                                break;
+                            case 'reply-remove':
+                                $('#comment-'+data.targetdata).fadeOut().remove();
+                                comment_counter(data.applicationid, 'sub');
+                                break;
+                        }
+                    } else {
+                        //setUpdateStatus('current');
+                        console.log('no update necessary - you are the updater');
+                    }
+                } else {
+                    //console.log('update');
+                }
+            };
+            this.ws.onclose = function() {
+                console.log('websocket closed');
+                if (!manual_close) {
+                    setUpdateStatus('error');
+                }
+            };
+            this.ws.onerror = function(e) {
+                console.log(e);
+                closeConnection('error');
+            };
+        }
+        
+        // Send a message to the WebSocket Server
+        WebSocketClient.prototype.send = function(message) {
+            if (this.ws.readyState == this.STATE_CONNECTED) {
+                console.log(message);
+                this.ws.send(message);
+            } else {
+                console.log("Not Connected");
+            }
+        };
+        // close the connection
+        WebSocketClient.prototype.disconnect = function() {
+            this.ws.close();
+        }
+        
+        if ('WebSocket' in window) {
+            window.WebSocketClient = new WebSocketClient('{{=websocket_ip}}/realtime/{{=websocket_group}}');
+            setUpdateStatus('current');
+        } else {
+            alert('WebSocket not supported.');
+        }
+        
+        var broadcast_data;
+        var socket_status = '<span class="navbar-span nav navbar-nav navbar-right navbar-status"><small id="nav-preopt"></small><i id="nav-status" class="fa fa-check-circle uptodate"></i><small id="nav-message"></small><span id="countdown">0:00</span></span>';
+        
+        $('#navbar').after(socket_status);
+        setUpdateStatus('current');
+        
+        function cancelReload() {
+            reload_auto = false;
+            $('#nav-status').removeClass(function(idx, css) {
+                return (css.match(/(?:\bfa-\w+-circle)/g) || []).join(' ');
+            }).removeClass('uptodate errored offline').addClass('outdated fa-exclamation-circle');
+            $('#nav-message').text('Outdated');
+            $('#countdown').hide();
+            $('#nav-preopt').text('');
+            window.WebSocketClient = new WebSocketClient('{{=websocket_ip}}/realtime/{{=websocket_group}}');
+        }
+        
+        function pageReload() {
+            if (reload_auto) {
+                location.reload();
+            }
+            reload_auto = true; // reset reload_auto
+        }
+        
+        /*
+        Display countdown timer on the navbar
+        */
+        function setUpdateStatus(s) {
+            // update navbar status indicator
+            $('#nav-preopt').text('');
+            if (s === 'current') {
+                $('#nav-status').removeClass(function(idx, css) {
+                    return (css.match(/(?:\bfa-\w+-circle)/g) || []).join(' ');
+                }).removeClass('outdated errored offline').addClass('uptodate fa-check-circle');
+                $('#nav-message').text('Synced');
+            } else if (s === 'old') {
+                $('#nav-status').removeClass(function(idx, css) {
+                    return (css.match(/(?:\bfa-\w+-circle)/g) || []).join(' ');
+                }).removeClass('uptodate errored offline').addClass('outdated fa-exclamation-circle');
+                $('#nav-message').text('Outdated');
+            } else if (s === 'error') {
+                $('#nav-status').removeClass(function(idx, css) {
+                    return (css.match(/(?:\bfa-\w+-circle)/g) || []).join(' ');
+                }).removeClass('uptodate outdated offline').addClass('errored fa-times-circle');
+                $('#nav-message').text('Connection Error');
+            } else if (s === 'offline') {
+                $('#nav-status').removeClass(function(idx, css) {
+                    return (css.match(/(?:\bfa-\w+-circle)/g) || []).join(' ');
+                }).removeClass('uptodate outdated errored').addClass('offline fa-minus-circle');
+                $('#nav-message').text('Auto Update Disabled');
+            }
+        }
+        
+        /*
+        Display countdown timer on the navbar
+        */
+        function finalCountdown() {
+            var $display = $('#countdown');
+            $display.show();
+            var count = reload_interval_sec;
+            var mins = parseInt(count / 60)
+            var seconds = parseInt(count % 60);
+            $display.text(mins + ":" + seconds).show();
+            count--;
+            var iid = setInterval(function() {
+                mins = parseInt(count / 60)
+                seconds = parseInt(count % 60);
+                seconds = (seconds < 10) ? "0" + seconds : seconds;
+                $display.text(mins + ":" + seconds);
+                count--;
+                if (count < 0) {
+                    clearInterval(iid);
+                }
+            }, 1000);
+        }
+        
+        function closeConnection(status) {
+            // to get ready for reload
+            manual_close = true;
+            window.WebSocketClient.disconnect();
+            setUpdateStatus(status);
+            console.log('Connection closed');
+        }
+        
+        function broadcastListener(type, msg) {
+            var data = JSON.parse(e.data);
+            if (data.msg === 'update') {
+                // requires update/reload - show message, start countdown till force reload
+                console.log('needs update');
+                closeConnection('old');
+                finalCountdown(); // show timer
+                delay(function() {
+                    pageReload();
+                },reload_interval_sec*1000);
+            } else {
+                setUpdateStatus('current');
+                console.log('up to date');
+            }
+        }
+        
+        $(document).on('click', '#nav-preopt', function() {
+            if ($(this).text() !== '') {
+                cancelReload();
+            }
+        });
+        
+        $(document).on('click', '#stopauto', function() {
+            if (!$(this).parent().hasClass('disabled')) {
+                if (confirm("Stopping Auto Update.\n\n* Auto Update can be re-enabled by reloading.\n\nContinue?")) {
+                    closeConnection('offline');
+                    $(this).parent().addClass('disabled');
+                    $(this).hide();
+                    reload_auto = false;
+                }
+            }
+        });
+        
+        function wstest() {
+            console.log('wstest()');
+            $.ajax({
+                url: '{{=URL("websocket_test")}}',
+                data: { updater: socketid },
+            });
+        }
+        $(document).on('click', '#wssend', function(e) {
+            wstest();
+        });
+        
+    });
+</script>
+
+<script type="text/javascript" src="{{=URL('static','js/modernizr.custom.js')}}"></script>
+<script type="text/javascript" src="{{=URL('static','js/moment.min.js')}}"></script>
+<script type="text/javascript" src="{{=URL('static','js/classie.js')}}"></script>
+<script type="text/javascript" src="{{=URL('static','js/typeahead.bundle.js')}}"></script>
+<script type="text/javascript" src="{{=URL('static','js/bootstrap-tagsinput.min.js')}}"></script>
+
+<script type="text/javascript" src="{{=URL('static','bootstrap-daterangepicker/daterangepicker.js')}}"></script>
+<script type="text/javascript" src="{{=URL('static','js/bootstrap-datepicker.min.js')}}"></script>
+
+<script type="text/javascript" src="{{=URL('static','DataTables-1.10.7/media/js/jquery.dataTables.min.js')}}"></script>
+<script type="text/javascript" src="{{=URL('static','DataTables-1.10.7/media/js/dataTables.bootstrap.js')}}"></script>
+<script type="text/javascript" src="{{=URL('static','DataTables-1.10.7/media/js/dataTables.responsive.min.js')}}"></script>
+
+<script type="text/javascript" src="{{=URL('static','js/jnewsticker.js')}}"></script>
+<script type="text/javascript" src="{{=URL('static','js/select2.min.js')}}"></script>
+<script type="text/javascript" src="{{=URL('static','js/jquery.multiple.select.js')}}"></script>

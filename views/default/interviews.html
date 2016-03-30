@@ -1,0 +1,826 @@
+{{extend 'layout_bootstrap3.html'}}
+
+<link rel="stylesheet" type="text/css" href="{{=URL('static', 'css/jquery-ui.css')}}" />
+<link rel="stylesheet" type="text/css" href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" />
+<link rel="stylesheet" type="text/css" href="{{=URL('static', 'tablesorter/css/theme.bootstrap.css')}}" />
+<link rel="stylesheet" type="text/css" href="{{=URL('static', 'css/bootstrap-datepicker3.css')}}" />
+<link rel="stylesheet" type="text/css" href="{{=URL('static', 'bootstrap-daterangepicker/daterangepicker-bs3.css')}}" />
+<link rel="stylesheet" type="text/css" href="{{=URL('static', 'css/xrecruit.css')}}?v=2" />
+
+<style>
+.navbar {display:none;}
+.container-full {margin-top:-50px;}
+.boot-tab-div label {padding-right:0;}
+</style>
+
+<script type="text/javascript">
+    
+    function getDateStr(date) {
+        var pad = '00';
+        var y = date.getFullYear();
+        var m = (pad+(date.getMonth()+1)).slice(-pad.length);
+        var d = (pad+date.getDate()).slice(-pad.length);
+        return m + '/' + d + '/' + y;
+    }
+    
+    function emailLink(email) {
+        return '<a href="mailto:' + email + '">' + email + '</a>';
+    }
+    function anchorize(url) {
+        var a = '';
+        if (url !== '') {
+            var name = url;
+            if (url.length > 28) {
+                name = url.substring(0, 25) + '...';
+            }
+            a = '<a href="http://' + url + '" target="_blank">' + name + '</a>';
+        }
+        return a
+    }
+    function fileLink(fp) {
+        if (fp === '') {
+            fp = '<i class="icon-ban-circle" style="opacity:0.5;" title="no file"></i>';
+        }
+        return fp;
+    }
+    function getMonthName(m) {
+        var monthNames = ["January", "February", "March", "April", "May", "June",
+                       "July", "August", "September", "October", "November", "December"];
+        return monthNames[m];
+    }
+    function getMonthStr(m) {
+        var months = ['','jan','feb','mar','apr','may','jun','jul','aug','sept','oct','nov','dec'];
+        return ('00' + months.indexOf(m.toLowerCase()).toString()).slice(-2);
+    }
+    
+    function dateparser(d) {
+        return getMonthName(d.getMonth()) + ' ' + d.getDate() + ', ' + d.getFullYear();
+    }
+    
+    var loading_icon = '<span class="fa fa-spin fa-refresh"></span>';
+    
+    var tmpt = new Date();
+    var today = new Date(tmpt.getFullYear(), tmpt.getMonth(), tmpt.getDate());
+    var yearstart = new Date(today.getFullYear()+'/01/01');
+    
+    
+    /* DOCUMENT READY */
+    $(document).ready(function() {
+        
+        $('#daterange-label').html(dateparser(yearstart) + ' - ' + dateparser(today));
+        
+        $.tablesorter.addParser({
+            id: 'mydate',
+            is: function(s) {
+                return false;
+            },
+            format: function(s) {
+                // s = mmm dd yyyy
+                var mat = /(\w{3,4})\s(\d{2})\s(\d{4})/.exec(s);
+                if (mat) {
+                    var z = new Date(getMonthStr(mat[1]) + '/' + mat[2] + '/' + mat[3]);
+                    return z.getTime();
+                } else {
+                    return s;
+                }
+            },
+            type: 'numeric'
+        });
+        
+        $.extend($.tablesorter.themes.bootstrap, {
+            table: 'table table-bordered',
+            header: 'bootstrap-header',
+            footerRow: '',
+            footerCells: '',
+            icons: '',
+            sortNone: 'bootstrap-icon-unsorted',
+            sortAsc: 'glyphicon glyphicon-chevron-up',//'icon-chevron-up',
+            sortDesc: 'glyphicon glyphicon-chevron-down',//'icon-chevron-down',
+            active: '',
+            hover: '',
+            filterRow: '',
+            even: '',
+            odd: ''
+        });
+        
+        var $table = $('#audit').tablesorter({
+            theme: 'bootstrap',
+            sortList: [[0,0],[5,0],[1,0]], // [column, sortorder (0asc,1desc)
+            headerTemplate: '{content} {icon}',
+            headers: {
+                4: {width:'1px', filter:false, sorter:false}, // cvfile
+                5: {filter:false}, // reel
+                6: {sorter:'mydate'},
+                7: {width:'60px'},
+                8: {width:'60px'},
+            },
+            widgets: ['uitheme', 'zebra', 'resizable', 'filter', 'columnSelector', 'print'],
+            widgetOptions: {
+                zebra: ['even', 'odd'],
+                filter_external: '.search',
+                filter_columnFilters: true,
+                filter_saveFilters: true,
+                filter_reset: '.reset',
+                filter_functions: {
+                    1: {
+                        "New Applicant": function(e,n,f,i,$r) {
+                            return "New Applicant" == e;
+                        },
+                        "Interview Request": function(e,n,f,i,$r) {
+                            return "Interview Request" == e;
+                        },
+                        "Interview Pending": function(e,n,f,i,$r) {
+                            return "Interview Pending" == e;
+                        },
+                        "Offer Pending": function(e,n,f,i,$r) {
+                            return "Offer Pending" == e;
+                        },
+                        "Offer Declined": function(e,n,f,i,$r) {
+                            return "Offer Declined" == e;
+                        },
+                        "Hired": function(e,n,f,i,$r) {
+                            return "Hired" == e;
+                        },
+                        "Future Potential": function(e,n,f,i,$r) {
+                            return "Future Potential" == e;
+                        },
+                        "Pass": function(e,n,f,i,$r) {
+                            return "Pass" == e;
+                        },
+                    },
+                    6: function(e,n,f,i,$r) {
+                        var tmp = f.split('|');
+                        var start, end;
+                        if (tmp[0] !== '') {
+                            start = new Date(tmp[0]).getTime();
+                        }
+                        if (tmp[1] !== '') {
+                            end = new Date(tmp[1]).getTime();
+                        }
+                        if (start && end) {
+                            return n >= start && n <= end;
+                        } else if (start) {
+                            return n >= start;
+                        } else {
+                            return n <= end;
+                        }
+                    },
+                },
+                print_title: 'Mr. X Job Interviews',
+                print_rows: 'f',
+                print_columns: 's',
+                print_styleSheet: "{{=URL('static', 'tablesorter/css/theme.bootstrap.css')}}",
+                print_callback: function(config, $table, printStyle) {
+                    $.tablesorter.printTable.printOutput(config, $table.html(), printStyle);
+                },
+                columnSelector_name: 'data-name',
+                columnSelector_layout : '<label><input type="checkbox">{name}</label>',
+            }
+        })
+        .tablesorterPager({
+            container: $('.pager'),
+            removeRows: false,
+            output: '{startRow} - {endRow} / {filteredRows} ({totalRows})',
+            size: 5,
+        });
+        
+        $('#popover')
+            .popover({
+              placement: 'left',
+              html: true, // required if content has HTML
+              content: '<div id="popover-target"></div>'
+            })
+            // bootstrap popover event triggered when the popover opens
+            .on('shown.bs.popover', function () {
+              // call this function to copy the column selection code into the popover
+              $.tablesorter.columnSelector.attachTo( $('#audit'), '#popover-target');
+            });
+            
+          // initialize column selector using default settings
+          // note: no container is defined!
+          $(".bootstrap-popup").tablesorter({
+            theme: 'blue',
+            widgets: ['zebra', 'columnSelector', 'stickyHeaders']
+        });
+        
+        $(document).on('click', '#print', function(e) {
+            $('.tablesorter').trigger('printTable');
+        });
+        
+        // init daterange picker
+        $('#daterange').daterangepicker({
+            ranges: {
+                'Today': [today, today],
+                'Yesterday': [moment().subtract('days', 1), moment().subtract('days', 1)],
+                'Last 7 Days': [moment().subtract('days', 6), today],
+                'Last 30 Days': [moment().subtract('days', 29), today],
+                'This Month': [moment().startOf('month'), moment().endOf('month')],
+                'Last Month': [moment().subtract('month', 1).startOf('month'), moment().subtract('month', 1).endOf('month')],
+            },
+            opens: 'left',
+            format: 'YYYY-MM-DD',
+            startDate: yearstart,
+            endDate: today,
+        },
+        function(start, end) {
+            $('#daterange-label').html(start.format('MMMM D, YYYY') + ' - ' + end.format('MMMM D, YYYY'));
+            $('#date-filter-start').val(start.format("MM/DD/YYYY"));
+            $('#date-filter-end').val(end.format("MM/DD/YYYY"));
+            var f = start.format("MM/DD/YYYY") + '|' + end.format("MM/DD/YYYY");
+            var filters = [];
+            filters[6] = f;
+            $table.trigger('search', [filters]);
+        });
+        
+        // filter daterange picker
+        $(document).on('click', '#filter-dateapplied', function(e) {
+            e.preventDefault();
+        });
+        $('#filter-dateapplied').daterangepicker({
+            ranges: {
+                'Today': [today, today],
+                'Yesterday': [moment().subtract('days', 1), moment().subtract('days', 1)],
+                'Last 7 Days': [moment().subtract('days', 6), today],
+                'Last 30 Days': [moment().subtract('days', 29), today],
+                'This Month': [moment().startOf('month'), moment().endOf('month')],
+                'Last Month': [moment().subtract('month', 1).startOf('month'), moment().subtract('month', 1).endOf('month')],
+            },
+            format: 'YYYY-MM-DD',
+            startDate: yearstart,
+            endDate: today,
+        },
+        function(start, end) {
+            $('#filter-daterange-label').html(start.format('MMMM D, YYYY') + ' - ' + end.format('MMMM D, YYYY'));
+            $('#filter-datestart').val(start.format('YYYY-MM-DD'));
+            $('#filter-dateend').val(end.format('YYYY-MM-DD'));
+        });
+        
+        
+        /**
+         * Build tab content from selected table row
+         *
+         */
+        function detail_view(application_id) {
+            /* build detail view for selected applicant
+            0 name
+            1 status
+            2 position
+            3 studio
+            4 cv file
+            5 reel link
+            6 applied date
+            7 visa
+            8 country
+            9 how
+            */
+            var $application = $('#application-'+application_id);
+            var applicant_id = $application.data('applicantid');
+            var posting_id = $application.data('postingid');
+            var email = '<a href="mailto:'+$application.data('email')+'">'+$application.data('email')+'</a>';
+            var phone = $application.data('phone');
+            var status_id = $application.data('status');
+            var interview_request = $application.data('interview') == '1';
+            var interview_id = $application.data('iid');
+            var interview_icon = 'fa-times';
+            var interview_datestr = 'Not scheduled';
+            var interview_date = $application.data('idate');
+            if (typeof interview_date === 'undefined') {
+                interview_date = '';
+            } else {
+                interview_icon = 'fa-check';
+                var t = new Date(interview_date);
+                interview_datestr = getMonthName(t.getMonth()) + ' ' + t.getDate() + ' ' + t.getFullYear();
+            }
+            
+            var apply_date = '';
+            var cv = '';
+            var position = '';
+            var studio = '';
+            var studio_cls = '';
+            var name = '';
+            var reel = '';
+            var visa = '';
+            var nationality = '';
+            var hearsay = '';
+            var interview_icon = '';
+            var address = '';
+            var candidacy = !$('#application-'+application_id).hasClass('danger');
+            
+            $('#application-'+application_id+' > td').each(function(i, elem) {
+                var val = elem.innerHTML;
+                switch (i) {
+                    case 0:
+                        name = val;
+                        break;
+                    case 2:
+                        position = val;
+                        break;
+                    case 3:
+                        studio = val;
+                        if (studio.match(/toronto/i)) {
+                            studio_cls = "label-primary";
+                        } else {
+                            studio_cls = "label-danger";
+                        }
+                        break;
+                    case 4:
+                        cv = val;
+                        break;
+                    case 5:
+                        reel = val;
+                        break;
+                    case 6:
+                        apply_date = val;
+                        break;
+                    case 7:
+                        visa = val;
+                        break;
+                    case 8:
+                        nationality = val;
+                        break;
+                    case 9:
+                        hearsay = val + '<br>' + $(this).data('detail');
+                        break;
+                    default:
+                        break;
+                }
+            });
+            
+            var view = '<div class="form-horizontal"><div class="col-sm-6">'+
+            '<div class="form-group"><label class="control-label text-muted col-sm-3">Position:</label><div class="col-sm-9"><p class="form-control-static"><strong>'+position+'</strong><span class="label '+studio_cls+'">'+studio+'</span></p></div></div>'+
+            '<div class="form-group"><label class="control-label text-muted col-sm-3">Apply Date:</label><div class="col-sm-9"><p class="form-control-static">'+apply_date+'</p></div></div>'+
+            '<div class="form-group"><label class="control-label text-muted col-sm-3">CV:</label><div class="col-sm-9"><p class="form-control-static">'+cv+'</p></div></div>'+
+            '<div class="form-group"><label class="control-label text-muted col-sm-3">Reel:</label><div class="col-sm-9"><p class="form-control-static">'+reel+'</p></div></div>'+
+            '<div class="form-group"><label class="control-label text-muted col-sm-3">Email:</label><div class="col-sm-9"><p class="form-control-static">'+email+'</p></div></div>'+
+            '<div class="form-group"><label class="control-label text-muted col-sm-3">Phone:</label><div class="col-sm-9"><p class="form-control-static">'+phone+'</p></div></div>'+
+            '<div class="form-group"><label class="control-label text-muted col-sm-3">VISA Status:</label><div class="col-sm-9"><p class="form-control-static">'+visa+'</p></div></div>'+
+            '<div class="form-group"><label class="control-label text-muted col-sm-3">How?:</label><div class="col-sm-9"><p class="form-control-static">'+hearsay+'</p></div></div>'+
+            '</div>';
+            
+            // interview request
+            if (interview_request) {
+                var interview_icon = 'fa-check';
+                var interview_btn = 'btn-success';
+            } else {
+                var interview_icon = 'fa-ban';
+                var interview_btn = 'btn-default';
+            }
+            
+            var interview = "<div class='form-group'><label class='col-sm-4 control-label muted'>Interview Request:</label>" +
+            "<div class='col-sm-4'><button id='interview-change-"+application_id+"' class='interview-change form-control btn "+
+            interview_btn+" btn-mini'data-application='"+application_id+"' data-iid='"+interview_id+
+            "' title='interview request'><i class='fa "+interview_icon+"'></i></button></div></div>";
+            
+            var $status_select = $('{{=XML(status_select)}}');
+            $status_select.find('option').filter('[value="'+status_id+'"]').attr('selected', true);
+            $status_select.attr('data-org', status_id);
+            var status_sel = '<div class="form-group"><label class="control-label col-sm-4 muted">Status:</label><div class="col-sm-6" data-application="'+application_id+'">'+$status_select.wrap('<div>').parent().html()+'</div></div>';
+            
+            if (candidacy) {
+                var candidacy_icon = 'fa-thumbs-o-up text-success';
+                var candidate_tip = 'Good candidate';
+            } else {
+                var candidacy_icon = 'fa-thumbs-o-down text-danger';
+                var candidate_tip = 'Bad candidate';
+            }
+            
+            var candidate = "";
+            
+            var interview_datepicker = '<div class="form-group"><label class="control-label col-sm-4 muted">Interview:</label><div class="col-sm-6"><div class="form-control">'+interview_datestr+'</div></div></div>';
+            
+            {{if auth.has_membership("admin") or auth.has_membership("hr"):}}
+            candidate = "<div class='form-group'><label class='col-sm-4 control-label muted'>Candidacy:</label>"+
+            "<div class='col-sm-3'><button class='candidacy-change form-control btn btn-default btn-mini' data-application='"+
+            application_id+"' data-applicant='"+applicant_id+"' title='"+candidate_tip+"'><i class='fa fa-lg "+
+            candidacy_icon+"'></i></button></div></div>";
+            
+            // interview date picker
+            interview_datepicker = '<div class="form-group"><label class="control-label col-sm-4 muted">Interview:</label><div class="col-sm-6"><div class="input-group"><span class="input-group-addon"><i class="interview-icon fa '+interview_icon+'"></i></span><input id="interview-date-'+application_id+'" class="interview-date form-control" value="'+interview_date+'" data-idate="'+interview_date+'"><span class="input-group-btn"><button class="btn btn-primary interview-create" data-application="'+application_id+'" type="button">Submit</button></span></div></div></div>';
+            {{pass}}
+            
+            view += "<div class='col-sm-6'>" + candidate + status_sel + interview_datepicker +"</div>";
+            
+            // comments
+            var comments_btn = "<span class='pull-right'><button class='btn btn-default btn-sm comment-submit' data-application='" + application_id + "'>Post Comment</button></span>";
+            var comment_input = "<div class='inline form-group comments-wrapper'><textarea id='commenter-text-"+application_id+"' class='form-control comment-input'></textarea></div>";
+            var comments_list = "<hr><div><ul id='comments-list-"+application_id+"' class='comments'>" + loading_icon + "</ul></div>";
+            var comments = "<div id='comment-"+application_id+"'><div style='margin-bottom:0;'><label class='muted'>Comments</label>" + comments_btn + "</div>" + comment_input + comments_list + "</div>";
+            
+            view += "<div class='col-sm-12 comments-section'><hr/>" + comments + "</div>";
+            
+            return view;
+        }
+        
+        function comment_section(elem) {
+            if (elem.hasClass('active')) {
+            } else {
+                elem.addClass('active').slideDown('slow');
+            }
+        }
+        
+        /**
+         * Create tab
+         */
+        function tabbit(aid, label, data) {
+            var tab_id = 'label-'+aid;
+            if ($('#'+tab_id).length) {
+                // already exists, select it
+                var index = $('#detail-tabs li[id="'+tab_id+'"]').index();
+                $('#detail-tabs').tabs('option', 'active', index);
+            } else {
+                // build detail view of applicant
+                var li = '<li id="label-' + aid + '" class="boot-tab-li ui-tabs-selected ui-state-active" data-tab="tab-' + aid + '"><a href="#tab-' + aid + '">' + label + '</a><span class="tabclose fa fa-times" role="ui-icon-close presentation"></span></li>';
+                var ul = $('#detail-tabs').find('.ui-tabs-nav');
+                ul.append(li);
+                var detail = detail_view(aid);
+                $('#detail-tabs').append('<div id="tab-' + aid + '" class="boot-tab-div">' + detail + '</div>');
+                
+                var num_tabs = ul.children().length;
+                $('#detail-tabs').tabs('refresh').tabs('option', 'active', num_tabs-1);
+                $('#clear-tabs').show();
+                
+                //init datepicker
+                var $idatepicker = $('#tab-'+aid).find('.interview-date');
+                var d = today;
+                if ($idatepicker.val() !== '') {
+                    d = new Date($idatepicker.val());
+                }
+                var $dp = $idatepicker.datepicker({
+                    format: 'M dd yyyy',
+                    weekStart: 1,
+                    startDate: d,
+                    todayBtn: 'linked',
+                    autoclose: true,
+                    todayHighlight: true,
+                });
+                $dp.datepicker('setDate', d);
+            }
+            get_comments(aid);
+        }
+        
+        function get_comments(application_id) {
+            $.ajax({
+                url: '{{=URL("getComments")}}',
+                dataType: 'html',
+                data: {
+                    application_id: application_id}
+            })
+            .done(function(data) {
+                // refresh comments list
+                if (data !== null) {
+                    if (data !== '') {
+                        $('#comments-list-'+application_id).empty().append(data);
+                    } else {
+                        $('#comments-list-'+application_id).empty().append("<span class='muted'>No comments</span>");
+                    }
+                }
+                $('*[title]').tooltip();
+            });
+        }
+        
+        function interview_update(application_id, m, iid) {
+            $.ajax({
+                url: '{{=URL("interviewRequest")}}',
+                dataType: 'json',
+                data: {
+                    application_id: application_id,
+                    mode: m,
+                    interview_id: iid,
+                }
+            })
+            .done(function(data) {
+                // success
+            });
+        }
+        
+        function status_update(application_id, status_id, status_name) {
+            $.ajax({
+                url: '{{=URL("updateStatus")}}',
+                dataType: 'json',
+                data: {
+                    application_id: application_id,
+                    status_id: status_id,
+                }
+            })
+            .done(function(data) {
+                $('#application-'+application_id+'> td:nth-child(2)').html(status_name);
+            });
+        }
+        
+        // initial
+        $(document).not('td').tooltip({
+            placement: 'bottom',
+        });
+        
+        // init tabs
+        $('#detail-tabs').tabs()
+        .delegate('.tabclose', 'click', function() {
+            var panelId = $(this).closest('li').remove().data('tab');
+            $('#' + panelId).remove();
+            $('#detail-tabs').tabs('refresh');
+            if ($('#detail-tabs li').length === 0) {
+                $('#clear-tabs').hide();
+            }
+        });
+        
+        $(document).on('change', '#filter-location', function() {
+            if ($(this).val() === '') {
+                $('#cba > button').addClass('disable');
+            } else {
+                $('#cba > button').removeClass('disable');
+            }
+        });
+        
+        $('#filter-daterange span').html("");
+        $('#filter-date-start').val("");
+        $('#filter-date-end').val("");
+        
+        //$('.tablesorter-headerRow').next().hide();
+        $('.tablesorter-filter').addClass('form-control');
+        
+        $(document).on('click', '.tablesorter-filter', function() {
+            if($(this).data('column') == '6') {
+                $('#daterange').trigger('click');
+            }
+        });
+        
+        $(document).on('change', '.status-update', function() {
+            var $this = $(this);
+            var application_id = $this.parent().data('application');
+            var fromval = $this.data('org');
+            if (fromval == 3) {
+                if (!confirm("Changing status from Interview Pending will cancel the scheduled interview.\nContinue?")) {
+                    $this.val(3);
+                    return;
+                }
+                $('#tab-'+application_id).find('.interview-icon').removeClass(function(idx, css) {
+                    return (css.match(/(?:\bfa-\w+)/g) || []).join(' ');
+                    }).addClass('fa-times');
+                var iid = $('#application-'+application_id).data('iid');
+                if (typeof iid !== 'undefined') {
+                    interview_update(application_id, 'remove', iid);
+                }
+            }
+            
+            var toval = $this.val();
+            if (toval == 3) {
+                // don't allow switching to this status manually - must set interview date
+                $this.val($this.data('org'));
+                var msg = "You cannot set this status manually.";
+                {{if auth.has_membership("admin") or auth.has_membership("hr"):}}
+                msg += "\nSetting the interview date updates the status to 'Interview Pending' automatically.";
+                {{pass}}
+                alert(msg);
+            } else {
+                $this.data('org', toval);
+                status_update(application_id, toval, $('option:selected', $this).text());
+            }
+        });
+        
+        /**
+         * Create interview
+         */
+        $(document).on('click', '.interview-create', function() {
+            var $dateinput = $(this).parent().prev();
+            if ($dateinput.val() !== '') {
+                var application_id = $(this).data('application');
+                var mode = 'Schedule';
+                var $t = $('#tab-'+application_id).find('.status-update');
+                if ($('#tab-'+application_id).find('.status-update').val() == '3') {
+                    mode = 'Update';
+                }
+                if (confirm(mode+" interview?")) {
+                    var d = $dateinput.datepicker('getDate');
+                    $.ajax({
+                        url: '{{=URL("interviewRequest")}}',
+                        dataType: 'json',
+                        data: {
+                            application_id: application_id,
+                            date: d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(),
+                            mode: 'add',
+                        }
+                    })
+                    .done(function(data) {
+                        var $tab = $('#tab-'+application_id);
+                        var $statussel = $tab.find('.status-update');
+                        $statussel.val(3);
+                        $statussel.data('org',3);
+                        $tab.find('.interview-icon').removeClass(function(idx, css) {
+                            return (css.match(/(?:\bfa-\w+)/g) || []).join(' ');
+                            }).addClass('fa-check');
+                        status_update(application_id, 3, 'Interview Pending');
+                        $('#application-'+application_id).data('iid', data);
+                    });
+                }
+            } else {
+                alert("Please pick a date.");
+            }
+        });
+        
+        
+        // table row click
+        $(document).on('click', '#result tbody tr', function() {
+            var name = $(this).children(':first').text();
+            var application_id = this.id.split('-')[1];
+            tabbit(application_id, name, $('#'+this.id).html());
+        });
+        
+        // close all tabs
+        $(document).on('click', '#clear-tabs', function(e) {
+            $('#detail-tabs li').each(function(i, elem) {
+                var panelId = $(elem).remove().data('tab');
+                $('#' + panelId).remove();
+            });
+            $('#detail-tabs').tabs('refresh');
+            $(this).hide();
+            e.preventDefault();
+        });
+        
+        $(document).on('click', '.candidacy-change', function() {
+            var $this = $(this);
+            var applicationid = $this.data('application');
+            var applicantid = $this.data('applicant');
+            var cur,next,candidacy,tip;
+            if ($this.children().hasClass('fa-thumbs-o-up')) {
+                cur = 'fa-thumbs-o-up text-success';
+                next = 'fa-thumbs-o-down text-danger';
+                tip = 'Bad candidate';
+                candidacy = 0;
+                // flag table rows with this applicant
+                $('#result').find('tr[data-applicantid="'+applicantid+'"]').addClass('danger');
+            } else {
+                cur = 'fa-thumbs-o-down text-danger';
+                next = 'fa-thumbs-o-up text-success';
+                tip = 'Good candidate';
+                candidacy = 1;
+                // flag table rows with this applicant
+                $('#result').find('tr[data-applicantid="'+applicantid+'"]').removeClass('danger');
+            }
+            $this.attr('data-original-title',tip).children().removeClass(cur).addClass(next);
+            
+            $.ajax({
+                url: '{{=URL("updateCandidacy")}}',
+                data: {
+                    applicantid: applicantid,
+                    candidacy: candidacy,
+                    }
+            })
+            .done(function(data) {
+                // success
+            });
+        });
+        
+        /**
+          * Export table as spreadsheet
+          */
+        $(document).on('click', '#export-btn', function() {
+            var $link = $('#export-link');
+            $link.removeClass(function(idx, css) {
+                return (css.match(/(?:\bfa-\w+)/g) || []).join(' ');
+            }).addClass('fa-spin fa-circle-o-notch');
+            
+            $.ajax({
+                url: '{{=URL("exportSpreadsheet")}}',
+                data: {
+                    condition: '',
+                }
+            })
+            .done(function(data) {
+                // success - refresh comments list
+                $link.removeClass('fa-spin fa-circle-o-notch');
+                if (data !== '') {
+                    $link.addClass('fa-file-excel-o').parent().attr('href', data);
+                } else {
+                    // error
+                    $link.addClass('fa-ban');
+                    alert('Export error');
+                }
+            });
+        });
+        
+        $(document).on('click', '#filter-submit', function(e) {
+            e.preventDefault();
+            $('#filterform').submit();
+        });
+        
+    });
+</script>
+
+<div class="row-fluid">
+    <div id="filter" class="row">
+        <div class="col-sm-12">
+            <div class="panel-group">
+              <div class="panel panel-default">
+                <div class="panel-heading" role="tab" data-toggle="collapse" data-toggle="collapse" href="#filterdiv">
+                  <span class="text-muted"><i class="fa fa-database"></i> Database Query</span>
+                </div>
+                <div id="filterdiv" class="panel-collapse collapse" role="tabpanel">
+                  <div class="panel-body">
+                    {{=filter_form}}
+                  </div>
+                </div>
+              </div>
+            </div>
+        </div>
+        <div class="col-sm-6">
+            <div class="input-group">
+                <input class="form-control search" type="search" data-column="0,2-11" placeholder="Search all columns">
+                <input id="date-filter-start" class="search1 hidden" type="text" data-column="1">
+                <input id="date-filter-end" class="search1 hidden" type="text" data-column="1">
+                <span class="input-group-btn">
+                    <button class="btn btn-default reset" type="button"><i class="fa fa-eraser"></i> Clear</button>
+                </span>
+            </div>
+        </div>
+        <div class="col-sm-6">
+            <button id="daterange" class="btn btn-default pull-right">
+                <i class="fa fa-calendar"></i>
+                <span id="daterange-label"></span> <span class="caret"></span>
+            </button>
+        </div>
+    </div>
+    
+    <div id="table-div" class="row-fluid">
+        
+          <div id="result-pane" class="">
+            <div class="pager">
+              <select class="form-control pagesize input-sm" title="Select page size">
+                  <option selected="selected" value="10">10</option>
+                  <option value="20">20</option>
+                  <option value="30">30</option>
+                  <option value="40">40</option>
+              </select>
+              <img src="{{=URL('static', 'tablesorter/addons/pager/icons/first.png')}}" class="first"/>
+              <img src="{{=URL('static', 'tablesorter/addons/pager/icons/prev.png')}}" class="prev"/>
+              <span class="pagedisplay"></span>
+              <img src="{{=URL('static', 'tablesorter/addons/pager/icons/next.png')}}" class="next"/>
+              <img src="{{=URL('static', 'tablesorter/addons/pager/icons/last.png')}}" class="last"/>
+              <select class="form-control input-sm gotoPage" title="Go to page"></select>
+              
+              {{if auth.has_membership("admin") or auth.has_membership("hr"):}}
+              <div class="btn-toolbar pull-right">
+                <div class="btn-group">
+                  <button id="popover" class="btn btn-default">Columns</button>
+                  <button id="print" class="btn btn-default">Print</button>
+                </div>
+                <div class="btn-group">
+                  <div class="input-group" style="width:120px;">
+                    <button id="export-btn" class="form-control btn btn-default">Export</button>
+                    <span class="input-group-addon">
+                        <a href="#"><i id="export-link" class="fa fa-ban"></i></a>
+                    </span>
+                  </div>
+                </div>
+              </div>
+              {{pass}}
+              
+            </div>
+            
+            {{=table}}
+            
+            <div class="pager">
+              <select class="form-control pagesize input-sm" title="Select page size">
+                <option selected="selected" value="10">10</option>
+                <option value="20">20</option>
+                <option value="30">30</option>
+                <option value="40">40</option>
+              </select>
+              <img src="{{=URL('static', 'tablesorter/addons/pager/icons/first.png')}}" class="first"/>
+              <img src="{{=URL('static', 'tablesorter/addons/pager/icons/prev.png')}}" class="prev"/>
+              <span class="pagedisplay"></span>
+              <img src="{{=URL('static', 'tablesorter/addons/pager/icons/next.png')}}" class="next"/>
+              <img src="{{=URL('static', 'tablesorter/addons/pager/icons/last.png')}}" class="last"/>
+              <select class="form-control input-sm gotoPage" title="Go to page"></select>
+            </div>
+            
+        </div>
+        
+    </div>
+    
+</div>
+
+<div id="status-selector" class="hidden">
+<div class="btn-group">
+  <a class="btn btn-primary" href="#"><i id="top-label" class="fa fa-user fa-fw"></i> User</a>
+  <a class="btn btn-primary dropdown-toggle" data-toggle="dropdown" href="#">
+    <span class="fa fa-caret-down"></span></a>
+  <ul class="dropdown-menu">
+    <li><a class="item" href="#"><i class="fa fa-pencil fa-fw"></i> Edit</a></li>
+    <li><a class="item" href="#"><i class="fa fa-trash-o fa-fw"></i> Delete</a></li>
+    <li><a class="item" href="#"><i class="fa fa-ban fa-fw"></i> Ban</a></li>
+    <li class="divider"></li>
+    <li><a href="#"><i class="i"></i> Make admin</a></li>
+  </ul>
+</div>
+</div>
+
+<script src="{{=URL('static','js/jquery-ui.min.js')}}" type="text/javascript"></script>
+<script src="{{=URL('static','js/moment.min.js')}}" type="text/javascript"></script>
+<script src="{{=URL('static','bootstrap-daterangepicker/daterangepicker.js')}}" type="text/javascript"></script>
+<script src="{{=URL('static','js/bootstrap-datepicker.js')}}" type="text/javascript"></script>
+<script src="{{=URL('static','tablesorter/js/jquery.tablesorter.min.js')}}" type="text/javascript"></script>
+<script src="{{=URL('static','tablesorter/js/jquery.tablesorter.widgets.js')}}" type="text/javascript"></script>
+<script src="{{=URL('static','tablesorter/js/jquery.tablesorter.widgets-filter-formatter.min.js')}}" type="text/javascript"></script>
+<script src="{{=URL('static','tablesorter/addons/pager/jquery.tablesorter.pager.min.js')}}" type="text/javascript"></script>
+<script src="{{=URL('static','tablesorter/js/widgets/widget-print.js')}}" type="text/javascript"></script>
+<script src="{{=URL('static','tablesorter/js/widgets/widget-columnSelector.js')}}" type="text/javascript"></script>
